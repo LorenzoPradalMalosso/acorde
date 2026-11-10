@@ -1,8 +1,20 @@
-# Plataforma de Gestão Corporativa com Micro-ESG
+<div align="center">
 
-> **Projeto de Desenvolvimento de Sistemas — Situação de Aprendizagem (6 semanas)**  
-> **Status:** planejamento e desenvolvimento inicial · **Nome do produto:** a definir  
-> **Plataformas obrigatórias:** Web e Mobile
+# 🌿 Acorde
+
+### Gestão em sintonia.
+
+**Organização, colaboração e sustentabilidade em uma única plataforma.**
+
+![Status](https://img.shields.io/badge/STATUS-EM%20DESENVOLVIMENTO-0F3D34?style=for-the-badge)
+![Plataformas](https://img.shields.io/badge/WEB%20%2B%20MOBILE-INTEGRADAS-1F6B58?style=for-the-badge)
+![Micro ESG](https://img.shields.io/badge/MICRO--ESG-IMPACTO%20POSITIVO-299B75?style=for-the-badge)
+
+**📋 Gestão de tarefas · 👥 Colaboração · 🌱 Micro-ESG · 📊 Indicadores**
+
+</div>
+
+---
 
 Uma plataforma colaborativa que conecta **organização do trabalho, acompanhamento de tarefas e sustentabilidade**. Gestores e colaboradores poderão acompanhar responsabilidades e prazos; atividades elegíveis poderão registrar ações sustentáveis com **estimativas transparentes de impacto ambiental**.
 
@@ -154,6 +166,19 @@ No backend, senhas devem ser protegidas por **hash seguro para senhas** (ex.: BC
 
 ## Tecnologias e arquitetura
 
+<div align="center">
+
+![React](https://img.shields.io/badge/React-0F3D34?style=flat-square&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-0F3D34?style=flat-square&logo=typescript&logoColor=3178C6)
+![Vite](https://img.shields.io/badge/Vite-0F3D34?style=flat-square&logo=vite&logoColor=FFD62E)
+![Flutter](https://img.shields.io/badge/Flutter-0F3D34?style=flat-square&logo=flutter&logoColor=54C5F8)
+![Java](https://img.shields.io/badge/Java-0F3D34?style=flat-square&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-0F3D34?style=flat-square&logo=springboot&logoColor=6DB33F)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-0F3D34?style=flat-square&logo=postgresql&logoColor=white)
+![GitHub](https://img.shields.io/badge/GitHub-0F3D34?style=flat-square&logo=github&logoColor=white)
+
+</div>
+
 | Camada | Tecnologia definida |
 | --- | --- |
 | Web | **React + TypeScript + Vite** |
@@ -285,4 +310,14 @@ As decisões devem ser documentadas em [`docs/decisoes.md`](docs/decisoes.md), c
 
 ---
 
-**Projeto acadêmico de Desenvolvimento de Sistemas** · Aplicações Web e Mobile · Gestão operacional + Micro-ESG.
+<div align="center">
+
+### 🌿 Acorde
+
+**Gestão em sintonia.**
+
+*Organizando pessoas, conectando processos e transformando ações em impacto positivo.*
+
+**Projeto acadêmico de Desenvolvimento de Sistemas · SENAI · 2026**
+
+</div>
