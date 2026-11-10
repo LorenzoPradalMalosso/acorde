@@ -1,0 +1,16 @@
+/* ACORDE BRAND TOKENS — v1.0 */
+:root {
+  --acorde-primary: #0F3D34;
+  --acorde-primary-600: #1F6B58;
+  --acorde-accent: #7FD8B0;
+  --acorde-accent-soft: #E8F6F0;
+  --acorde-background: #F7FAF8;
+  --acorde-foreground: #1F2A28;
+  --acorde-muted: #66746D;
+  --acorde-border: #DDEAE4;
+  --acorde-font-heading: 'Manrope', 'Inter', system-ui, sans-serif;
+  --acorde-font-body: 'Inter', system-ui, sans-serif;
+  --acorde-radius-card: 16px;
+  --acorde-radius-control: 10px;
+}
+/* Functional status colors are distinct from the brand palette. */

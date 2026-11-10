@@ -1,0 +1,22 @@
+{
+  "name": "Acorde",
+  "version": "1.0.0",
+  "tagline": "Gestão em sintonia",
+  "colors": {
+    "verde-profundo": "#0F3D34",
+    "verde-medio": "#1F6B58",
+    "menta": "#7FD8B0",
+    "verde-claro": "#E8F6F0",
+    "off-white": "#F7FAF8",
+    "grafite": "#1F2A28",
+    "cinza": "#66746D",
+    "borda": "#DDEAE4",
+    "branco": "#FFFFFF",
+    "preto": "#17231E"
+  },
+  "type": {
+    "display": "Manrope",
+    "body": "Inter",
+    "wordmark": "Inter Display ExtraBold outlined"
+  }
+}
