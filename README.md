@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌿 Acorde
+<img src="assets/acorde-horizontal-principal.svg" width="680" alt="Ponto Cego — olho sobre marcador de localização" />
 
 ### Gestão em sintonia.
 
