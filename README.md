@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/acorde-horizontal-principal.svg" width="680" alt="Ponto Cego — olho sobre marcador de localização" />
+<img src="assets/branding/Acorde_Brand_Kit/logos/svg/acorde-horizontal-digital.svg" width="680" alt="Acorde - Gestão em sintonia" />
 
 ### Gestão em sintonia.
 
