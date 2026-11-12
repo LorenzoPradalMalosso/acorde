@@ -98,51 +98,7 @@ erDiagram
 - `tarefas` **N:N** `tags_verdes`, via `tarefas_tags`.
 - `tarefas_tags` **1:0..1** `registros_impacto` — vínculo pode existir sem estimativa; uma estimativa depende de um vínculo válido.
 
-## 2. Entidades para as expansões
-
-As tabelas abaixo preservam a **visão completa RF01–RF11**, mas **não devem ser criadas apenas para preencher o escopo**. Desenvolvê-las quando o respectivo módulo entrar na sprint.
-
-| Módulo | Entidades futuras | Requisitos |
-|---|---|---|
-| Calendário/aprovação | `eventos`, `eventos_participantes`, `eventos_tags` | RF01, RF04, RF06 |
-| Mural e alertas | `lembretes`, `notificacoes` | RF02, RF03 |
-| Metas ESG | `metas_esg`, `medicoes_meta` | RF07 |
-| Sobrecarga | `disponibilidades_semanais` | RF09 |
-| Eco-Score | `regras_pontuacao`, `movimentacoes_pontos`, `insignias`, `conquistas_membro`, `conquistas_organizacao` | RF08 |
-| Dashboard | **sem tabela própria**: consultas e agregações das anteriores | RF10 |
-| Anti-duplicidade | **sem tabela própria no MVP**: consulta textual na criação | RF05 |
-
-### DER complementar: relações previstas
-
-```mermaid
-erDiagram
-    ORGANIZACOES ||--o{ EVENTOS : agenda
-    MEMBROS ||--o{ EVENTOS : cria
-    EVENTOS ||--o{ EVENTOS_PARTICIPANTES : inclui
-    MEMBROS ||--o{ EVENTOS_PARTICIPANTES : participa
-    EVENTOS ||--o{ EVENTOS_TAGS : recebe
-    TAGS_VERDES ||--o{ EVENTOS_TAGS : classifica
-    EVENTOS_TAGS ||--o| REGISTROS_IMPACTO : estima
-    ORGANIZACOES ||--o{ LEMBRETES : publica
-    MEMBROS ||--o{ LEMBRETES : escreve
-    MEMBROS ||--o{ NOTIFICACOES : recebe
-    TAREFAS o|--o{ NOTIFICACOES : origina
-    EVENTOS o|--o{ NOTIFICACOES : origina
-    ORGANIZACOES ||--o{ METAS_ESG : define
-    METAS_ESG ||--o{ MEDICOES_META : mede
-    REGISTROS_IMPACTO o|--o{ MEDICOES_META : fundamenta
-    MEMBROS ||--o{ DISPONIBILIDADES_SEMANAIS : informa
-    MEMBROS ||--o{ MOVIMENTACOES_PONTOS : recebe
-    REGRAS_PONTUACAO ||--o{ MOVIMENTACOES_PONTOS : pontua
-    INSIGNIAS ||--o{ CONQUISTAS_MEMBRO : concede
-    MEMBROS ||--o{ CONQUISTAS_MEMBRO : ganha
-    INSIGNIAS ||--o{ CONQUISTAS_ORGANIZACAO : concede
-    ORGANIZACOES ||--o{ CONQUISTAS_ORGANIZACAO : ganha
-```
-
-> **Nota:** o segundo diagrama enfatiza relações adicionais, usando algumas entidades do MVP como referência. O modelo físico completo e seus campos estão no arquivo `DER_Completo.dbml`.
-
-## 3. Convenções e decisões técnicas
+## 2. Convenções e decisões técnicas
 
 1. **Chaves primárias:** UUID; em PostgreSQL, `gen_random_uuid()` é uma alternativa.
 2. **Data/hora:** `TIMESTAMPTZ` para eventos auditáveis; `DATE` para prazo de tarefas que não tenha horário.
@@ -151,11 +107,9 @@ erDiagram
 5. **Senhas:** salvar hash (BCrypt/Argon2id), nunca senha em texto puro ou criptografia reversível.
 6. **Status/prioridade/papel:** documentar valores permitidos e adicionar `CHECK` no PostgreSQL ou enum conforme decisões do backend.
 7. **Impacto ESG:** não calcular CO₂ ou folhas poupadas sem valor de entrada, fonte e fatores explicáveis. `valor_estimado = quantidade_base × fator_conversao` apenas quando a métrica escolhida seguir esse modelo.
-8. **Eventos futuros:** para tags em reuniões, introduzir `eventos_tags` e `evento_tag_id` opcional em `registros_impacto`, com `CHECK` exigindo **exatamente um** entre `tarefa_tag_id` e `evento_tag_id`.
-9. **Eco-Score e indicadores:** calcular a partir de registros, sem armazenar totais redundantes em `usuarios` ou `membros` no início.
-10. **LGPD:** evitar CPF e outros dados pessoais sem necessidade do problema; aplicar princípios de minimização e proteção.
+8. **LGPD:** evitar CPF e outros dados pessoais sem necessidade do problema; aplicar princípios de minimização e proteção.
 
-## 4. Decisões ainda pendentes
+## 3. Decisões ainda pendentes
 
 - [ ] O piloto é **uma empresa só**? Recomendação: manter `organizacoes`/`membros` desde o começo, mas simplificar a interface.
 - [ ] Quem pode atribuir uma tarefa, alterar o responsável, editar e excluir?
@@ -163,12 +117,10 @@ erDiagram
 - [ ] Prazo terá somente data ou também hora? Como tratar fusos horários?
 - [ ] Quais tags sustentáveis entram no MVP? Qual evidência é necessária para contabilizar impacto?
 - [ ] Como medir estimativa de papel evitado e registrar fonte/fator sem criar valores fictícios?
-- [ ] Como definir a janela de carga horária, férias e ausência (`U = He/Hc × 100`)?
-- [ ] Qual relacionamento entre metas, indicadores e medidas manuais será aprovado?
 
-## 5. Para usar no GitHub e no desenvolvimento
+## 4. Para usar no GitHub e no desenvolvimento
 
-- Copie este documento para `docs/modelagem/DER.md`.
+- Este é o documento principal do modelo de dados. Não mantenha cópias em outros diretórios.
 - A visualização Mermaid renderiza direto no GitHub.
-- Use `DER_Completo.dbml` no [dbdiagram.io](https://dbdiagram.io/) para editar visualmente e exportar modelos.
 - Valide o DER antes de gerar migrações com **Flyway** ou **Liquibase** e implementar entidades JPA.
+- Modelos de módulos ainda não priorizados ficam em [`futuro/`](futuro/).
