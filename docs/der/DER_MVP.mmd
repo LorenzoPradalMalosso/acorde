@@ -1,0 +1,65 @@
+erDiagram
+    ORGANIZACOES ||--o{ MEMBROS : possui
+    USUARIOS ||--o{ MEMBROS : participa
+    ORGANIZACOES ||--o{ TAREFAS : contem
+    MEMBROS ||--o{ TAREFAS : cria
+    MEMBROS o|--o{ TAREFAS : responsavel
+    TAREFAS ||--o{ TAREFAS_TAGS : recebe
+    TAGS_VERDES ||--o{ TAREFAS_TAGS : classifica
+    TAREFAS_TAGS ||--o| REGISTROS_IMPACTO : produz
+
+    ORGANIZACOES {
+        uuid id PK
+        varchar nome
+        timestamptz criado_em
+    }
+    USUARIOS {
+        uuid id PK
+        varchar nome
+        varchar email UK
+        varchar senha_hash
+        boolean ativo
+    }
+    MEMBROS {
+        uuid id PK
+        uuid organizacao_id FK
+        uuid usuario_id FK
+        varchar papel
+        decimal capacidade_semanal_horas
+    }
+    TAREFAS {
+        uuid id PK
+        uuid organizacao_id FK
+        uuid criado_por_membro_id FK
+        uuid responsavel_membro_id FK
+        varchar titulo
+        varchar status
+        varchar prioridade
+        date data_limite
+        decimal horas_estimadas
+        timestamptz concluida_em
+    }
+    TAGS_VERDES {
+        uuid id PK
+        varchar codigo UK
+        varchar nome
+        varchar tipo_indicador
+        boolean ativa
+    }
+    TAREFAS_TAGS {
+        uuid id PK
+        uuid tarefa_id FK
+        uuid tag_verde_id FK
+        timestamptz associada_em
+    }
+    REGISTROS_IMPACTO {
+        uuid id PK
+        uuid tarefa_tag_id FK
+        decimal quantidade_base
+        varchar unidade_base
+        decimal fator_conversao
+        decimal valor_estimado
+        varchar unidade_resultado
+        text fonte_fator
+        timestamptz calculado_em
+    }

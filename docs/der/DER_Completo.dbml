@@ -1,0 +1,218 @@
+// ACORDE — Modelo lógico proposto para PostgreSQL
+// Base do MVP: organizacoes, usuarios, membros, tarefas, tags_verdes, tarefas_tags, registros_impacto.
+// Demais entidades estão documentadas como FUTURO; não precisam ser criadas no sprint inicial.
+// Importar em https://dbdiagram.io/ para editar o DER.
+Project Acorde {
+  database_type: 'PostgreSQL'
+  Note: 'Modelo proposto. Validar escopo e regras com a equipe/professor antes da implementacao.'
+}
+
+Table organizacoes {
+  id uuid [pk]
+  nome varchar(160) [not null]
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table usuarios {
+  id uuid [pk]
+  nome varchar(160) [not null]
+  email varchar(255) [not null, unique]
+  senha_hash varchar(255) [not null, note: 'Hash seguro: BCrypt/Argon2id, nao criptografia reversivel']
+  ativo boolean [not null, default: true]
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table membros {
+  id uuid [pk]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  usuario_id uuid [not null, ref: > usuarios.id]
+  papel varchar(20) [not null, note: 'GESTOR | COLABORADOR']
+  capacidade_semanal_horas numeric(6,2) [note: 'Padrao opcional; capacidade por semana pode sobrescrever']
+  ativo boolean [not null, default: true]
+  ingressou_em timestamptz [not null, default: `now()`]
+  indexes {
+    (organizacao_id, usuario_id) [unique]
+    (organizacao_id, id) [unique]
+  }
+}
+
+Table tarefas {
+  id uuid [pk]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  criado_por_membro_id uuid [not null, ref: > membros.id]
+  responsavel_membro_id uuid [ref: > membros.id]
+  titulo varchar(180) [not null]
+  descricao text
+  status varchar(24) [not null, note: 'A_FAZER | EM_ANDAMENTO | CONCLUIDA | CANCELADA']
+  prioridade varchar(16) [not null, note: 'BAIXA | MEDIA | ALTA']
+  data_limite date
+  horas_estimadas numeric(6,2)
+  concluida_em timestamptz
+  criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz [not null, default: `now()`]
+  indexes {
+    (organizacao_id, status)
+    (responsavel_membro_id, data_limite)
+  }
+}
+
+Table tags_verdes {
+  id uuid [pk]
+  codigo varchar(60) [not null, unique]
+  nome varchar(100) [not null]
+  descricao text
+  tipo_indicador varchar(40) [not null, note: 'Ex.: FOLHAS_EVITADAS ou CO2_KG_ESTIMADO']
+  ativa boolean [not null, default: true]
+}
+
+Table tarefas_tags {
+  id uuid [pk]
+  tarefa_id uuid [not null, ref: > tarefas.id]
+  tag_verde_id uuid [not null, ref: > tags_verdes.id]
+  associada_em timestamptz [not null, default: `now()`]
+  indexes {
+    (tarefa_id, tag_verde_id) [unique]
+  }
+}
+
+Table registros_impacto {
+  id uuid [pk]
+  tarefa_tag_id uuid [unique, ref: > tarefas_tags.id, note: 'MVP: vinculo com tarefa. FUTURO: pode ser nulo se evento_tag_id estiver preenchido']
+  evento_tag_id uuid [unique, ref: > eventos_tags.id, note: 'FUTURO: para reunioes. CHECK: exatamente um dos dois vinculos presente']
+  quantidade_base numeric(12,3) [not null]
+  unidade_base varchar(30) [not null]
+  fator_conversao numeric(16,6) [not null]
+  valor_estimado numeric(14,4) [not null]
+  unidade_resultado varchar(30) [not null]
+  fonte_fator text [not null]
+  premissas text
+  calculado_em timestamptz [not null, default: `now()`]
+  Note: 'Estimativa, nao comprovacao de economia real. Persistir o fator e a fonte. No MVP o evento_tag_id ainda nao existe.'
+}
+
+// FUTURO — calendario / agendamentos (RF01, RF04)
+Table eventos {
+  id uuid [pk]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  criado_por_membro_id uuid [not null, ref: > membros.id]
+  aprovado_por_membro_id uuid [ref: > membros.id]
+  titulo varchar(180) [not null]
+  descricao text
+  inicio_em timestamptz [not null]
+  fim_em timestamptz [not null]
+  modalidade varchar(16) [note: 'PRESENCIAL | ONLINE']
+  status_aprovacao varchar(20) [not null, note: 'PENDENTE | APROVADO | REJEITADO']
+  decidido_em timestamptz
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table eventos_participantes {
+  evento_id uuid [not null, ref: > eventos.id]
+  membro_id uuid [not null, ref: > membros.id]
+  confirmacao varchar(20) [note: 'PENDENTE | CONFIRMADO | RECUSADO']
+  indexes { (evento_id, membro_id) [pk] }
+}
+
+Table eventos_tags {
+  id uuid [pk]
+  evento_id uuid [not null, ref: > eventos.id]
+  tag_verde_id uuid [not null, ref: > tags_verdes.id]
+  indexes { (evento_id, tag_verde_id) [unique] }
+}
+
+// FUTURO — mural e alertas (RF02, RF03)
+Table lembretes {
+  id uuid [pk]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  autor_membro_id uuid [not null, ref: > membros.id]
+  titulo varchar(160) [not null]
+  conteudo text
+  prioridade varchar(16)
+  fixado boolean [default: false]
+  expira_em timestamptz
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table notificacoes {
+  id uuid [pk]
+  membro_id uuid [not null, ref: > membros.id]
+  tarefa_id uuid [ref: > tarefas.id]
+  evento_id uuid [ref: > eventos.id]
+  tipo varchar(40) [not null]
+  titulo varchar(160) [not null]
+  mensagem text
+  criada_em timestamptz [not null, default: `now()`]
+  lida_em timestamptz
+}
+
+// FUTURO — metas ESG e carga de trabalho (RF07, RF09)
+Table metas_esg {
+  id uuid [pk]
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  titulo varchar(180) [not null]
+  eixo varchar(20) [not null, note: 'AMBIENTAL | SOCIAL | GOVERNANCA']
+  indicador varchar(60) [not null]
+  unidade varchar(30) [not null]
+  valor_alvo numeric(14,4) [not null]
+  data_inicio date
+  data_fim date
+}
+
+Table medicoes_meta {
+  id uuid [pk]
+  meta_esg_id uuid [not null, ref: > metas_esg.id]
+  registro_impacto_id uuid [ref: > registros_impacto.id]
+  registrado_por_membro_id uuid [ref: > membros.id]
+  origem varchar(20) [not null, note: 'MANUAL | REGISTRO_IMPACTO']
+  valor numeric(14,4) [not null]
+  registrado_em timestamptz [not null, default: `now()`]
+  indexes { (meta_esg_id, registro_impacto_id) [unique] }
+}
+
+Table disponibilidades_semanais {
+  id uuid [pk]
+  membro_id uuid [not null, ref: > membros.id]
+  semana_inicio date [not null]
+  horas_disponiveis numeric(6,2) [not null]
+  indexes { (membro_id, semana_inicio) [unique] }
+}
+
+// FUTURO — Eco-Score e insignias (RF08)
+Table regras_pontuacao {
+  id uuid [pk]
+  codigo varchar(60) [not null, unique]
+  descricao text
+  pontos integer [not null]
+  ativa boolean [default: true]
+}
+
+Table movimentacoes_pontos {
+  id uuid [pk]
+  membro_id uuid [not null, ref: > membros.id]
+  regra_id uuid [not null, ref: > regras_pontuacao.id]
+  tarefa_id uuid [ref: > tarefas.id]
+  registro_impacto_id uuid [ref: > registros_impacto.id]
+  pontos_aplicados integer [not null]
+  gerado_em timestamptz [not null, default: `now()`]
+}
+
+Table insignias {
+  id uuid [pk]
+  nome varchar(100) [not null]
+  descricao text
+  criterio text
+}
+
+Table conquistas_membro {
+  membro_id uuid [not null, ref: > membros.id]
+  insignia_id uuid [not null, ref: > insignias.id]
+  concedida_em timestamptz [not null, default: `now()`]
+  indexes { (membro_id, insignia_id) [pk] }
+}
+
+Table conquistas_organizacao {
+  organizacao_id uuid [not null, ref: > organizacoes.id]
+  insignia_id uuid [not null, ref: > insignias.id]
+  concedida_em timestamptz [not null, default: `now()`]
+  indexes { (organizacao_id, insignia_id) [pk] }
+}

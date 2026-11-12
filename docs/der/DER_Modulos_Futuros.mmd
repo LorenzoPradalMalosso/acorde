@@ -1,0 +1,23 @@
+erDiagram
+    ORGANIZACOES ||--o{ EVENTOS : agenda
+    MEMBROS ||--o{ EVENTOS : cria
+    EVENTOS ||--o{ EVENTOS_PARTICIPANTES : inclui
+    MEMBROS ||--o{ EVENTOS_PARTICIPANTES : participa
+    EVENTOS ||--o{ EVENTOS_TAGS : recebe
+    TAGS_VERDES ||--o{ EVENTOS_TAGS : classifica
+    EVENTOS_TAGS ||--o| REGISTROS_IMPACTO : estima
+    ORGANIZACOES ||--o{ LEMBRETES : publica
+    MEMBROS ||--o{ LEMBRETES : escreve
+    MEMBROS ||--o{ NOTIFICACOES : recebe
+    TAREFAS o|--o{ NOTIFICACOES : origina
+    EVENTOS o|--o{ NOTIFICACOES : origina
+    ORGANIZACOES ||--o{ METAS_ESG : define
+    METAS_ESG ||--o{ MEDICOES_META : mede
+    REGISTROS_IMPACTO o|--o{ MEDICOES_META : fundamenta
+    MEMBROS ||--o{ DISPONIBILIDADES_SEMANAIS : informa
+    MEMBROS ||--o{ MOVIMENTACOES_PONTOS : recebe
+    REGRAS_PONTUACAO ||--o{ MOVIMENTACOES_PONTOS : pontua
+    INSIGNIAS ||--o{ CONQUISTAS_MEMBRO : concede
+    MEMBROS ||--o{ CONQUISTAS_MEMBRO : ganha
+    INSIGNIAS ||--o{ CONQUISTAS_ORGANIZACAO : concede
+    ORGANIZACOES ||--o{ CONQUISTAS_ORGANIZACAO : ganha
