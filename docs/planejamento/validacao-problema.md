@@ -1,32 +1,49 @@
-# Validação do problema real
+# Validação do problema real — Acorde 2.0
 
-> **Status:** pendente. Este arquivo é um roteiro de pesquisa, não um registro de entrevista já realizada.
+> **Versão do sistema: 2.0. Status: pendente.** Este arquivo é um roteiro de pesquisa; não registra entrevista realizada nem comprova que uma organização já forneceu dados ou autorização.
+
+## Problema a investigar
+
+Pequenas e médias organizações podem ter dificuldade para identificar fontes de emissões da rotina de trabalho, acompanhar sua evolução e transformar dados em ações de redução.
+
+**Pergunta-problema proposta:** como auxiliar empresas a identificar, monitorar e reduzir sua pegada de carbono operacional por meio de uma plataforma digital acessível e colaborativa?
+
+O público sugerido é formado por gestores e colaboradores de uma organização piloto. Validar se a necessidade existe nesse contexto antes de tratar a hipótese como fato.
 
 ## Contexto da organização ou equipe
+
 - Nome fictício ou identificação autorizada:
-- Setor / tipo de atividade:
+- Setor/tipo de atividade:
 - Número aproximado de pessoas envolvidas:
-- Como tarefas e prazos são organizados hoje:
-- Autorização de uso de informações (sem dados pessoais desnecessários):
+- Como energia e deslocamentos são registrados atualmente:
+- Fontes de dados disponíveis, unidade e período:
+- Como são definidas metas ambientais e ações hoje:
+- Autorização para uso das informações, sem dados pessoais desnecessários:
 
 ## Perguntas sugeridas
 
-1. Como vocês distribuem e acompanham tarefas atualmente?
-2. Quais problemas de prazo, retrabalho ou comunicação são mais frequentes?
-3. Quais atividades precisam de maior visibilidade do responsável ou do gestor?
-4. Existe alguma ação ambiental já realizada, como digitalização ou redução de papel?
-5. Quais informações seriam mais úteis em um dashboard?
-6. Uma versão Web para gestor e Mobile para colaboradores ajudaria no fluxo real? Por quê?
+1. Como a organização acompanha consumo de energia e deslocamentos relacionados ao trabalho?
+2. Quais fontes ambientais são mais relevantes e quais dados já existem?
+3. Que dificuldades existem para obter dados comparáveis por mês ou período?
+4. Como são escolhidos os fatores ou métodos de cálculo usados atualmente?
+5. Quais ações de redução já são feitas e como seus responsáveis acompanham o progresso?
+6. Quais informações seriam úteis em um painel ambiental e quais precisam permanecer restritas?
+7. Um fluxo Web para gestores e Mobile para colaboradores ajudaria? Por quê?
+8. Quais dados a organização não pode ou não deseja compartilhar?
 
 ## Evidências coletadas
 
-| Data | Participante/papel (sem dados pessoais desnecessários) | Problema observado | Evidência/observação |
-| --- | --- | --- | --- |
+| Data | Participante/papel (sem dados pessoais desnecessários) | Problema observado | Evidência/observação autorizada |
+|---|---|---|---|
 | A preencher | A preencher | A preencher | A preencher |
 
 ## Conclusão da validação
 
 - Problemas confirmados:
-- Necessidades prioritárias:
-- Ajustes necessários no MVP:
-- Decisão aprovada pela equipe/professor:
+- Fontes de emissão prioritárias no contexto:
+- Dados disponíveis, lacunas e restrições:
+- Necessidades de gestor e colaborador:
+- Ajustes no MVP:
+- Decisão da equipe e aprovação do professor:
+
+Não inventar entrevistas, fatores, dados de piloto ou resultados. Evitar coletar endereços residenciais ou GPS quando informações agregadas/informadas forem suficientes.

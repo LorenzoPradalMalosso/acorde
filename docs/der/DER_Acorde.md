@@ -1,23 +1,26 @@
-# Acorde — Diagrama Entidade–Relacionamento (DER)
+# Acorde 2.0 — Modelo Entidade–Relacionamento (DER)
 
-> **Status:** proposta de modelo lógico, baseada nos requisitos do TCC. **Não é um banco implementado nem um modelo validado pela equipe.** Atualizar após aprovação do escopo e revisão das regras de negócio.
+> **Versão do sistema: 2.0. Status: modelo conceitual proposto.** Não representa banco implementado nem metodologia/fatores aprovados. Validar fontes, escopo, RBAC e regras de cálculo antes de criar migrações.
 >
-> **Stack:** Java + Spring Boot, PostgreSQL, Web React e Mobile Flutter. **Entrega acadêmica:** MVP em seis semanas, com funcionalidades complementares planejadas separadamente.
+> **Stack preservada:** Java + Spring Boot, PostgreSQL, Web React e Mobile Flutter. O modelo reutiliza `organizacoes`, `usuarios` e `membros` do DER anterior; substitui tarefas/tags/impactos como núcleo por atividades emissoras, fatores e registros de emissão.
 
-## 1. DER do MVP (7 entidades)
+## 1. Escopo conceitual do MVP
 
-O núcleo viabiliza o fluxo principal: **gestor cria tarefa na Web → colaborador consulta e conclui no Mobile → sistema registra impacto ambiental estimado → dashboard Web apresenta resultados**.
+O fluxo é: gestor registra energia na Web e colaborador registra deslocamento no Mobile → backend escolhe fator compatível e calcula → histórico e dashboard exibem dados parciais → gestor define metas e ações.
 
 ```mermaid
 erDiagram
     ORGANIZACOES ||--o{ MEMBROS : possui
     USUARIOS ||--o{ MEMBROS : participa
-    ORGANIZACOES ||--o{ TAREFAS : contem
-    MEMBROS ||--o{ TAREFAS : cria
-    MEMBROS o|--o{ TAREFAS : responsavel
-    TAREFAS ||--o{ TAREFAS_TAGS : recebe
-    TAGS_VERDES ||--o{ TAREFAS_TAGS : classifica
-    TAREFAS_TAGS ||--o| REGISTROS_IMPACTO : produz
+    ORGANIZACOES ||--o{ ATIVIDADES_EMISSORAS : monitora
+    MEMBROS ||--o{ ATIVIDADES_EMISSORAS : registra
+    ATIVIDADES_EMISSORAS ||--o| DADOS_ENERGIA : detalha
+    ATIVIDADES_EMISSORAS ||--o| DADOS_DESLOCAMENTO : detalha
+    ATIVIDADES_EMISSORAS ||--o{ REGISTROS_EMISSAO : calcula
+    FATORES_EMISSAO ||--o{ REGISTROS_EMISSAO : utiliza
+    ORGANIZACOES ||--o{ METAS_CARBONO : define
+    METAS_CARBONO ||--o{ ACOES_REDUCAO : organiza
+    MEMBROS ||--o{ ACOES_REDUCAO : responsavel
 
     ORGANIZACOES {
         uuid id PK
@@ -36,91 +39,133 @@ erDiagram
         uuid organizacao_id FK
         uuid usuario_id FK
         varchar papel
-        decimal capacidade_semanal_horas
+        boolean ativo
     }
-    TAREFAS {
+    ATIVIDADES_EMISSORAS {
         uuid id PK
         uuid organizacao_id FK
-        uuid criado_por_membro_id FK
+        uuid membro_id FK
+        varchar categoria
+        date periodo_inicio
+        date periodo_fim
+        numeric quantidade
+        varchar unidade
+        varchar estado
+        timestamptz criado_em
+    }
+    DADOS_ENERGIA {
+        uuid atividade_id PK,FK
+        numeric consumo_kwh
+        varchar regiao_rede
+    }
+    DADOS_DESLOCAMENTO {
+        uuid atividade_id PK,FK
+        varchar modalidade
+        numeric distancia_ida_volta_km
+        numeric dias_viagens
+        numeric ocupacao
+    }
+    FATORES_EMISSAO {
+        uuid id PK
+        varchar categoria
+        varchar escopo
+        numeric valor
+        varchar unidade_atividade
+        varchar unidade_resultado
+        varchar fonte
+        varchar versao
+        date valido_desde
+        date valido_ate
+        varchar regiao
+        text premissas
+    }
+    REGISTROS_EMISSAO {
+        uuid id PK
+        uuid atividade_id FK
+        uuid fator_id FK
+        numeric quantidade_aplicada
+        numeric fator_aplicado
+        numeric resultado_kg_co2e
+        varchar unidade_resultado
+        varchar estado
+        boolean vigente
+        timestamptz calculado_em
+    }
+    METAS_CARBONO {
+        uuid id PK
+        uuid organizacao_id FK
+        varchar categoria
+        date periodo_base_inicio
+        date periodo_base_fim
+        numeric valor_base_kg_co2e
+        numeric reducao_alvo_percentual
+        date prazo
+        varchar estado
+    }
+    ACOES_REDUCAO {
+        uuid id PK
+        uuid meta_id FK
         uuid responsavel_membro_id FK
         varchar titulo
-        varchar status
-        varchar prioridade
-        date data_limite
-        decimal horas_estimadas
-        timestamptz concluida_em
-    }
-    TAGS_VERDES {
-        uuid id PK
-        varchar codigo UK
-        varchar nome
-        varchar tipo_indicador
-        boolean ativa
-    }
-    TAREFAS_TAGS {
-        uuid id PK
-        uuid tarefa_id FK
-        uuid tag_verde_id FK
-        timestamptz associada_em
-    }
-    REGISTROS_IMPACTO {
-        uuid id PK
-        uuid tarefa_tag_id FK
-        decimal quantidade_base
-        varchar unidade_base
-        decimal fator_conversao
-        decimal valor_estimado
-        varchar unidade_resultado
-        text fonte_fator
-        timestamptz calculado_em
+        text descricao
+        date prazo
+        varchar estado
     }
 ```
 
-**Arquivos:** `DER_MVP.svg` (vetorial), `DER_MVP.png` (imagem) e `DER_MVP.mmd` (código editável).
+> O diagrama é conceitual. `DADOS_ENERGIA` e `DADOS_DESLOCAMENTO` detalham atributos específicos; a categoria determina qual detalhe deve existir. Confirmar se a quantidade genérica em `ATIVIDADES_EMISSORAS` é redundante antes de desenhar o esquema físico.
 
-### Entidades do MVP
+## 2. Entidades e cardinalidades
 
-| Entidade | Para que serve | Observações |
-|---|---|---|
-| `organizacoes` | Agrupa os dados de uma empresa/equipe. | **Decisão proposta:** mesmo que o piloto use uma organização, preparar isolamento futuro. |
-| `usuarios` | Identidades para login e autenticação. | `email` único; senha somente como hash seguro. |
-| `membros` | Vínculo de um usuário à organização, com perfil. | `GESTOR` ou `COLABORADOR`; `UNIQUE(organizacao_id, usuario_id)`. |
-| `tarefas` | Atividades com responsável, prazo, status e horas estimadas. | Responsável opcional; criador obrigatório; checar pertencimento à organização. |
-| `tags_verdes` | Catálogo de ações sustentáveis. | Ex.: `DIGITALIZACAO`; não implica comprovação de impacto. |
-| `tarefas_tags` | Relação N:N entre tarefas e tags. | `UNIQUE(tarefa_id, tag_verde_id)`. |
-| `registros_impacto` | Guarda **estimativas**, unidades, premissas e fator usado. | No MVP cada vínculo tarefa/tag admite 0 ou 1 estimativa. |
+| Entidade | Responsabilidade e regras propostas |
+|---|---|
+| `organizacoes` | Escopo de isolamento de dados e papéis |
+| `usuarios` | Identidade global, e-mail único e hash seguro da senha |
+| `membros` | Vínculo usuário/organização e papel (`GESTOR`, `COLABORADOR`); `UNIQUE(organizacao_id, usuario_id)` |
+| `atividades_emissoras` | Registro por fonte e período, pertencente a uma organização e informante; estado pode ser pendente por falta de dados/fator |
+| `dados_energia` | Consumo de energia em kWh e região/rede necessária à seleção do fator |
+| `dados_deslocamento` | Modalidade, distância de ida/volta, dias/viagens e ocupação quando pertinente; não requer GPS |
+| `fatores_emissao` | Fator imutável/versionado com categoria, escopo, valor, unidade, fonte, versão, validade, região e premissas |
+| `registros_emissao` | Uma revisão de cálculo; guarda fator/quantidade usados, resultado, estado e vigência |
+| `metas_carbono` | Objetivo organizacional com base temporal, valor-base, redução-alvo e prazo |
+| `acoes_reducao` | Trabalho de redução ligado a meta, com responsável, prazo e estado; não equivale a emissão evitada |
 
-### Cardinalidades importantes
+- Organização 1:N membros, atividades e metas; usuário 1:N membros.
+- Membro 1:N atividades registradas e ações sob sua responsabilidade.
+- Atividade 1:0..1 detalhes de energia ou deslocamento; validar coerência entre categoria e detalhe.
+- Atividade 1:N revisões de cálculo; fator 1:N registros de emissão. Pode haver revisão pendente sem fator associado.
+- Meta 1:N ações. O DER proposto exige meta para ação; rever se ações sem meta serão necessárias.
+- Não armazenar total de dashboard como fonte independente; agregar cálculos válidos vigentes.
 
-- `organizacoes` **1:N** `membros`; `usuarios` **1:N** `membros` — um usuário pode pertencer a mais de uma organização, mas um vínculo de membro pertence a uma única organização.
-- `organizacoes` **1:N** `tarefas` — toda tarefa pertence a uma organização.
-- `membros` **1:N** `tarefas` como **criador**; **0:N** como **responsável** — uma tarefa pode começar sem responsável, mas sempre tem um criador.
-- `tarefas` **N:N** `tags_verdes`, via `tarefas_tags`.
-- `tarefas_tags` **1:0..1** `registros_impacto` — vínculo pode existir sem estimativa; uma estimativa depende de um vínculo válido.
+## 3. Integridade e metodologia
 
-## 2. Convenções e decisões técnicas
+1. UUID como chaves; `TIMESTAMPTZ` para auditoria; `DATE` para períodos e prazos; `NUMERIC/DECIMAL` para quantidades, fatores e resultados.
+2. Incluir `CHECK` para períodos coerentes, quantidades não negativas, reduções percentuais e domínios de estado/unidade conforme as regras aprovadas.
+3. Garantir referências entre membro, atividade, fator, meta e organização. FKs simples não impedem por si sós vínculo cruzado entre organizações; avaliar chaves compostas e validação no Service.
+4. O fator deve preservar fonte, versão, unidade, escopo, validade, região e premissas. Uma correção publica nova versão; não altera o histórico de cálculos.
+5. Cálculo: `E = Q × FE`; aceitar somente unidade/categoria/período/região compatíveis. Guardar dados efetivamente usados.
+6. Registro sem fator compatível ou sem dados suficientes fica pendente e não entra no total. Ausência não é emissão zero.
+7. Uma revisão vigente por atividade entra nas agregações; as anteriores permanecem consultáveis, sem duplicar totais. Formalizar constraint de unicidade parcial em PostgreSQL.
+8. Detectar dados duplicados e definir tratamento de caronas conforme método de mobilidade; evitar contabilizar duas vezes a mesma viagem.
+9. Exibir emissões monitoradas com cobertura/fonte/período. Não caracterizar soma das fontes selecionadas como inventário completo.
+10. Redução percentual: `(base - atual) / base × 100`, apenas se `base > 0` e os períodos forem comparáveis. Base inválida/zero significa percentual indefinido; valores negativos indicam aumento.
+11. Conclusão de ação é progresso operacional e não gera automaticamente crédito, emissão evitada ou redução medida.
+12. Minimizar dados pessoais; não coletar endereço ou localização precisa sem necessidade validada.
 
-1. **Chaves primárias:** UUID; em PostgreSQL, `gen_random_uuid()` é uma alternativa.
-2. **Data/hora:** `TIMESTAMPTZ` para eventos auditáveis; `DATE` para prazo de tarefas que não tenha horário.
-3. **Autorização:** o papel fica em `membros`, e não diretamente em `usuarios`, permitindo papéis diferentes por organização. No backend, conferir a organização do usuário em toda leitura/mutação.
-4. **Integridade por organização:** além de verificar no Spring Security/Service, considerar FKs compostas `(organizacao_id, membro_id)` nas tarefas, eventos e demais tabelas; a referência simples de `membro_id` **não impede sozinha** relacionamentos entre empresas diferentes.
-5. **Senhas:** salvar hash (BCrypt/Argon2id), nunca senha em texto puro ou criptografia reversível.
-6. **Status/prioridade/papel:** documentar valores permitidos e adicionar `CHECK` no PostgreSQL ou enum conforme decisões do backend.
-7. **Impacto ESG:** não calcular CO₂ ou folhas poupadas sem valor de entrada, fonte e fatores explicáveis. `valor_estimado = quantidade_base × fator_conversao` apenas quando a métrica escolhida seguir esse modelo.
-8. **LGPD:** evitar CPF e outros dados pessoais sem necessidade do problema; aplicar princípios de minimização e proteção.
+## 4. Pendências antes de migrações
 
-## 3. Decisões ainda pendentes
+- Confirmar organização piloto e fontes do MVP.
+- Definir método de energia e fonte de fator por período/localização.
+- Definir unidade de mobilidade (passageiro-km ou veículo-km), ocupação, dias/viagens e deduplicação.
+- Definir estados e regras de transição de atividade, cálculo, meta e ação.
+- Definir se fator pode faltar numa revisão pendente e como registrar o motivo.
+- Formalizar RBAC, chaves compostas, retenção e exclusão de dados.
+- Revisar quantidade genérica versus detalhes tipados e regra de edição/reprocessamento.
+- Escolher Flyway ou Liquibase e gerar migrações só após aprovação do modelo.
 
-- [ ] O piloto é **uma empresa só**? Recomendação: manter `organizacoes`/`membros` desde o começo, mas simplificar a interface.
-- [ ] Quem pode atribuir uma tarefa, alterar o responsável, editar e excluir?
-- [ ] Quais estados e transições de tarefa serão usados? Uma tarefa pode ter vários responsáveis?
-- [ ] Prazo terá somente data ou também hora? Como tratar fusos horários?
-- [ ] Quais tags sustentáveis entram no MVP? Qual evidência é necessária para contabilizar impacto?
-- [ ] Como medir estimativa de papel evitado e registrar fonte/fator sem criar valores fictícios?
+## 5. Arquivos do DER
 
-## 4. Para usar no GitHub e no desenvolvimento
-
-- Este é o documento principal do modelo de dados. Não mantenha cópias em outros diretórios.
-- A visualização Mermaid renderiza direto no GitHub.
-- Valide o DER antes de gerar migrações com **Flyway** ou **Liquibase** e implementar entidades JPA.
-- Modelos de módulos ainda não priorizados ficam em [`futuro/`](futuro/).
+- `DER_MVP.mmd`: fonte Mermaid do modelo 2.0.
+- `DER_Completo.dbml`: modelo lógico editável, incluindo expansão.
+- `futuro/DER_Expansoes.md`: entidades adiadas.
+- Diagramas estáticos `.svg`/`.png` devem corresponder ao modelo atual; consultar `README.md` do diretório para o estado dos artefatos.

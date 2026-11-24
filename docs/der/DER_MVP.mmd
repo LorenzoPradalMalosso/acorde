@@ -1,12 +1,16 @@
+%% Acorde 2.0 — modelo conceitual proposto para o MVP; não implementado.
 erDiagram
     ORGANIZACOES ||--o{ MEMBROS : possui
     USUARIOS ||--o{ MEMBROS : participa
-    ORGANIZACOES ||--o{ TAREFAS : contem
-    MEMBROS ||--o{ TAREFAS : cria
-    MEMBROS o|--o{ TAREFAS : responsavel
-    TAREFAS ||--o{ TAREFAS_TAGS : recebe
-    TAGS_VERDES ||--o{ TAREFAS_TAGS : classifica
-    TAREFAS_TAGS ||--o| REGISTROS_IMPACTO : produz
+    ORGANIZACOES ||--o{ ATIVIDADES_EMISSORAS : monitora
+    MEMBROS ||--o{ ATIVIDADES_EMISSORAS : registra
+    ATIVIDADES_EMISSORAS ||--o| DADOS_ENERGIA : detalha
+    ATIVIDADES_EMISSORAS ||--o| DADOS_DESLOCAMENTO : detalha
+    ATIVIDADES_EMISSORAS ||--o{ REGISTROS_EMISSAO : calcula
+    FATORES_EMISSAO ||--o{ REGISTROS_EMISSAO : utiliza
+    ORGANIZACOES ||--o{ METAS_CARBONO : define
+    METAS_CARBONO ||--o{ ACOES_REDUCAO : organiza
+    MEMBROS ||--o{ ACOES_REDUCAO : responsavel
 
     ORGANIZACOES {
         uuid id PK
@@ -25,41 +29,75 @@ erDiagram
         uuid organizacao_id FK
         uuid usuario_id FK
         varchar papel
-        decimal capacidade_semanal_horas
+        boolean ativo
     }
-    TAREFAS {
+    ATIVIDADES_EMISSORAS {
         uuid id PK
         uuid organizacao_id FK
-        uuid criado_por_membro_id FK
+        uuid membro_id FK
+        varchar categoria
+        date periodo_inicio
+        date periodo_fim
+        numeric quantidade
+        varchar unidade
+        varchar estado
+        timestamptz criado_em
+    }
+    DADOS_ENERGIA {
+        uuid atividade_id PK,FK
+        numeric consumo_kwh
+        varchar regiao_rede
+    }
+    DADOS_DESLOCAMENTO {
+        uuid atividade_id PK,FK
+        varchar modalidade
+        numeric distancia_ida_volta_km
+        numeric dias_viagens
+        numeric ocupacao
+    }
+    FATORES_EMISSAO {
+        uuid id PK
+        varchar categoria
+        varchar escopo
+        numeric valor
+        varchar unidade_atividade
+        varchar unidade_resultado
+        varchar fonte
+        varchar versao
+        date valido_desde
+        date valido_ate
+        varchar regiao
+        text premissas
+    }
+    REGISTROS_EMISSAO {
+        uuid id PK
+        uuid atividade_id FK
+        uuid fator_id FK
+        numeric quantidade_aplicada
+        numeric fator_aplicado
+        numeric resultado_kg_co2e
+        varchar unidade_resultado
+        varchar estado
+        boolean vigente
+        timestamptz calculado_em
+    }
+    METAS_CARBONO {
+        uuid id PK
+        uuid organizacao_id FK
+        varchar categoria
+        date periodo_base_inicio
+        date periodo_base_fim
+        numeric valor_base_kg_co2e
+        numeric reducao_alvo_percentual
+        date prazo
+        varchar estado
+    }
+    ACOES_REDUCAO {
+        uuid id PK
+        uuid meta_id FK
         uuid responsavel_membro_id FK
         varchar titulo
-        varchar status
-        varchar prioridade
-        date data_limite
-        decimal horas_estimadas
-        timestamptz concluida_em
-    }
-    TAGS_VERDES {
-        uuid id PK
-        varchar codigo UK
-        varchar nome
-        varchar tipo_indicador
-        boolean ativa
-    }
-    TAREFAS_TAGS {
-        uuid id PK
-        uuid tarefa_id FK
-        uuid tag_verde_id FK
-        timestamptz associada_em
-    }
-    REGISTROS_IMPACTO {
-        uuid id PK
-        uuid tarefa_tag_id FK
-        decimal quantidade_base
-        varchar unidade_base
-        decimal fator_conversao
-        decimal valor_estimado
-        varchar unidade_resultado
-        text fonte_fator
-        timestamptz calculado_em
+        text descricao
+        date prazo
+        varchar estado
     }

@@ -1,243 +1,131 @@
-# Definição da arquitetura do sistema
+# Arquitetura do sistema — Acorde 2.0
 
-## 1. Arquitetura escolhida
+> **Versão do sistema: 2.0.** Este documento especifica uma arquitetura proposta; não há código de aplicação implementado. Stack e decisões arquiteturais gerais já estabelecidas são preservadas.
 
-Para o desenvolvimento do sistema, será adotada uma **arquitetura em camadas (Layered Architecture), combinada com o padrão MVC (Model-View-Controller), comunicação por meio de uma API REST e organização interna em monólito modular**.
+## 1. Decisões preservadas
 
-Essa arquitetura foi escolhida para separar as responsabilidades do sistema, facilitar a manutenção do código, permitir a evolução das funcionalidades e reduzir o acoplamento entre os componentes.
+- Web: React + TypeScript + Vite.
+- Mobile: Flutter, com objetivo Android/iOS.
+- Backend: Java + Spring Boot; API REST HTTP/JSON.
+- Dados: PostgreSQL; segurança: Spring Security + JWT.
+- Arquitetura: monólito modular, camadas e referência MVC.
+- Versionamento: Git + GitHub.
 
-A aplicação será organizada em quatro camadas principais:
+Web e Mobile consomem a mesma API. Autenticação, autorização por organização, validação, cálculo e agregação ficam no backend.
 
-- **Camada de apresentação:** responsável pelas interfaces utilizadas pelos gestores e colaboradores.
-- **Camada de controle:** responsável por receber as requisições, realizar validações iniciais e direcionar as operações.
-- **Camada de negócio:** responsável por executar as regras e os processos fundamentais do sistema.
-- **Camada de acesso a dados:** responsável pela comunicação com o banco de dados e pelo gerenciamento das informações armazenadas.
-
-A aplicação contará com interfaces Web e Mobile, que compartilharão o mesmo backend e utilizarão uma API REST para comunicação, por meio de requisições HTTP e troca de dados no formato JSON.
-
-## 2. Visão geral da arquitetura
-
-O diagrama a seguir apresenta o fluxo principal de comunicação entre as interfaces, a API REST, as camadas do backend e o banco de dados.
+## 2. Visão geral
 
 ```mermaid
 flowchart TB
-    subgraph FRONT["CAMADA DE APRESENTAÇÃO - FRONTEND"]
-        direction LR
-        WEB["Aplicacao Web<br/>React + TypeScript"]
-        MOBILE["Aplicativo Mobile<br/>Flutter"]
+    W[Web · React + TypeScript + Vite] --> API[API REST · HTTP/JSON]
+    M[Mobile · Flutter] --> API
+    API --> C[Controllers]
+    subgraph B[Backend · Java + Spring Boot · Monólito modular]
+      C --> S[Services por domínio]
+      S --> R[Repositories por domínio]
     end
-
-    API["API REST<br/>HTTP / JSON"]
-
-    subgraph BACK["BACKEND - JAVA + SPRING BOOT"]
-        direction TB
-        CTRL["CONTROLLERS<br/>Recebem e direcionam requisicoes"]
-        SERV["SERVICES<br/>Executam as regras de negocio"]
-        REPO["REPOSITORIES<br/>Acesso aos dados"]
-
-        CTRL --> SERV
-        SERV --> REPO
-    end
-
-    DB[("BANCO DE DADOS<br/>PostgreSQL")]
-
-    WEB --> API
-    MOBILE --> API
-    API --> CTRL
-    REPO <--> DB
-
-    classDef frontend fill:#dbeafe,stroke:#2563eb,color:#1e3a8a
-    classDef api fill:#ede9fe,stroke:#7c3aed,color:#4c1d95
-    classDef controller fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
-    classDef service fill:#ffedd5,stroke:#f97316,color:#7c2d12
-    classDef repository fill:#ccfbf1,stroke:#0d9488,color:#134e4a
-    classDef database fill:#dcfce7,stroke:#16a34a,color:#14532d
-
-    class WEB,MOBILE frontend
-    class API api
-    class CTRL controller
-    class SERV service
-    class REPO repository
-    class DB database
+    R <--> DB[(PostgreSQL)]
+    S -. autenticação e autorização .-> SEC[Spring Security + JWT]
 ```
 
-## 3. Camada de apresentação (View)
+## 3. Organização do backend
 
-A camada de apresentação será responsável pela interação entre os usuários e o sistema, disponibilizando as funcionalidades por meio de interfaces intuitivas, responsivas e acessíveis.
+Para concretizar o monólito modular, organizar primeiro por domínio e manter as camadas internas a cada módulo. Isso resolve a divergência da documentação anterior, que descrevia módulos de negócio mas ilustrava uma árvore agrupada apenas por camada.
 
-O projeto contará com duas aplicações:
-
-- **Frontend Web:** desenvolvido utilizando React com TypeScript, responsável pela interface acessada por navegadores, incluindo dashboards, gerenciamento de tarefas, calendário, notificações e acompanhamento de indicadores.
-- **Aplicativo Mobile:** desenvolvido utilizando Flutter, disponibilizando as principais funcionalidades do sistema para dispositivos Android e iOS.
-
-As interfaces serão responsáveis por apresentar as informações, receber os dados fornecidos pelos usuários e enviar as solicitações ao backend por meio da API REST.
-
-## 4. Camada de controle (Controller)
-
-A camada de controle será responsável por receber e processar as requisições enviadas pelas interfaces Web e Mobile.
-
-Suas principais responsabilidades serão:
-
-- Receber requisições HTTP enviadas pelos clientes;
-- Realizar validações iniciais dos dados recebidos;
-- Verificar autenticação e permissões de acesso;
-- Encaminhar as operações para os serviços responsáveis;
-- Retornar respostas adequadas às interfaces, incluindo dados ou mensagens de erro.
-
-Por exemplo, quando um colaborador cadastrar uma nova tarefa, o controlador receberá as informações enviadas pelo formulário e encaminhará a solicitação ao serviço responsável pelo gerenciamento de tarefas.
-
-## 5. Camada de negócio (Service)
-
-A camada de negócio concentrará as regras e os processos fundamentais da aplicação, sendo responsável por determinar como cada funcionalidade deverá operar.
-
-Para facilitar a organização e a manutenção, essa camada será dividida em serviços especializados:
-
-| Serviço | Responsabilidade |
+| Módulo proposto | Responsabilidades |
 |---|---|
-| AuthService | Autenticação de usuários e gerenciamento de acesso. |
-| UsuarioService | Cadastro, edição e gerenciamento de usuários e perfis. |
-| TarefaService | Criação, edição, atribuição e conclusão de tarefas. |
-| CalendarioService | Gerenciamento de eventos, reuniões e compromissos. |
-| NotificacaoService | Geração e gerenciamento de notificações e lembretes. |
-| MicroEsgService | Estimativa e acompanhamento dos impactos ambientais das atividades. |
-| MetaEsgService | Cadastro e acompanhamento de metas de sustentabilidade. |
-| GamificacaoService | Gerenciamento de pontuações, medalhas e conquistas. |
-| CargaTrabalhoService | Cálculo da ocupação dos colaboradores e identificação de sobrecargas. |
-| DashboardService | Consolidação de indicadores operacionais e ambientais. |
+| `auth` | Login, emissão/validação de JWT e contexto autenticado |
+| `organizacoes` | Usuários, membros, papéis e isolamento organizacional |
+| `carbono` | Registro e validação de atividades emissoras e dados por fonte |
+| `fatores` | Catálogo de fatores versionados, validade e compatibilidade |
+| `calculos` | Aplicar fator, persistir revisão e definir estado vigente/pendente |
+| `metas` | Períodos-base, metas de redução e progresso comparável |
+| `acoes` | Ações de redução, responsáveis, prazo e estado |
+| `dashboard` | Consultas e agregações; sem armazenar totais duplicados |
 
-Essa divisão permite que cada serviço tenha uma responsabilidade específica, facilitando a implementação de novas funcionalidades e a realização de alterações sem comprometer o funcionamento de outras partes do sistema.
+Cada módulo pode conter `controller`, `service`, `repository`, `entity/model`, `dto` e validações conforme necessário. Evitar dependência circular. O dashboard consulta registros válidos vigentes; não deve manter uma cópia de total que possa divergir da origem.
 
-## 6. Camada de acesso a dados (Repository / Model)
+## 4. Responsabilidades por camada
 
-A camada de acesso a dados será responsável pela comunicação entre a aplicação e o banco de dados PostgreSQL.
+### Apresentação
 
-Será utilizado o padrão Repository para organizar as operações de persistência, evitando que os serviços de negócio precisem lidar diretamente com consultas SQL ou detalhes de armazenamento.
+- **Web:** gestor registra energia, consulta histórico/dashboard, define metas e atribui ações.
+- **Mobile:** colaborador registra deslocamento, consulta seus registros/metas e atualiza ações autorizadas.
+- Interfaces exibem estados pendentes, dados faltantes, unidades e limites dos indicadores.
+- A identidade usa os tokens/logotipos oficiais do Brand Kit; a paleta funcional de erro/alerta/sucesso permanece distinta da paleta de marca.
 
-Suas principais responsabilidades serão:
+### Controllers / API
 
-- Cadastrar e consultar usuários;
-- Armazenar e recuperar tarefas e compromissos;
-- Atualizar o andamento das atividades;
-- Registrar metas e indicadores de sustentabilidade;
-- Armazenar pontuações e conquistas;
-- Recuperar informações necessárias para os dashboards.
+Receber requisições HTTP, validar formato/DTO, invocar serviços e devolver contratos JSON e erros consistentes. Controllers não calculam emissões nem substituem verificações de autorização.
 
-Os Models representarão as principais entidades e estruturas de dados utilizadas pela aplicação, como usuários, tarefas, eventos e metas ESG.
+### Services
 
-## 7. Aplicação do padrão MVC
+Aplicar regras de negócio: isolamento de organização, RBAC, compatibilidade de unidade/categoria/período/região, versionamento do cálculo, validade temporal de fator, metas comparáveis e transições autorizadas de ação.
 
-O padrão MVC (Model-View-Controller) será utilizado como referência para organizar os componentes responsáveis pela apresentação, representação dos dados e processamento das requisições.
+### Repositories / PostgreSQL
 
-| Elemento | Função no sistema | Exemplo |
-|---|---|---|
-| Model | Representa as entidades e estruturas de dados. | Usuário, Tarefa, Evento e Meta ESG. |
-| View | Apresenta as informações e permite a interação com o usuário. | Dashboard, calendário e formulários. |
-| Controller | Recebe e direciona as requisições. | TarefaController e UsuarioController. |
+Persistir organizações, membros, atividades, detalhes de fonte, fatores versionados, revisões de cálculo, metas e ações. Usar DECIMAL/NUMERIC para quantidades, fatores e resultados. UUID e constraints são a proposta inicial, sujeita à revisão do DER.
 
-No backend, essa organização será aplicada diretamente por meio dos Controllers, Models e demais componentes da aplicação. No frontend React, a camada de apresentação será estruturada com componentes reutilizáveis, páginas e elementos de interface.
+## 5. Fluxo de cálculo
 
-### Exemplo prático: cadastro de uma tarefa
+1. Interface envia a atividade e unidade, período e atributos obrigatórios da fonte.
+2. API autentica usuário; serviço verifica papel e vínculo organizacional.
+3. Serviço valida atividade e encontra fator aplicável à categoria, unidade, período e região.
+4. Se houver informação insuficiente ou nenhum fator compatível, persistir estado pendente e motivo; não gerar zero.
+5. Se houver compatibilidade, calcular `E = Q × FE`, registrar quantidade, unidade, fator, versão, fonte, premissas e resultado.
+6. Revisões ficam no histórico; somente uma revisão válida vigente por atividade entra nas agregações, evitando dupla contagem.
+7. Dashboard agrega somente registros vigentes e informa cobertura/limitações.
 
-1. O colaborador acessa a interface Web ou Mobile e preenche o formulário de cadastro de tarefa.
-2. A interface envia os dados para o endpoint correspondente da API REST.
-3. O Controller recebe a requisição e realiza as validações iniciais.
-4. O TarefaService executa as regras de negócio, verificando permissões, informações obrigatórias e possíveis duplicidades.
-5. O serviço utiliza o TarefaRepository para armazenar os dados no PostgreSQL.
-6. O backend retorna uma resposta à interface, que atualiza a lista de tarefas e apresenta uma confirmação ao usuário.
+A forma de versionar fator/cálculo e a unicidade de uma versão vigente precisam ser formalizadas em migrações e testes. Alterações de fator nunca devem reescrever resultado histórico de forma silenciosa.
 
-Esse fluxo mantém as responsabilidades separadas e permite que as diferentes interfaces utilizem as mesmas regras de negócio.
+## 6. Segurança, privacidade e consistência
 
-## 8. Organização modular do sistema
+- Spring Security + JWT; hash seguro de senhas (BCrypt/Argon2id).
+- Autorizar toda leitura e mutação no backend, com organização derivada do usuário autenticado.
+- Aplicar FKs/constraints e, quando apropriado, chaves compostas que impeçam vínculos entre organizações.
+- Coletar apenas dados de mobilidade necessários ao cálculo; não exigir endereço/GPS automático sem justificativa validada.
+- Não expor informações pessoais na visão gerencial além da finalidade autorizada.
+- Registrar erros sem credenciais, tokens ou dados sensíveis.
 
-Além da separação em camadas, o sistema será dividido em módulos funcionais, de acordo com as principais áreas de atuação da aplicação.
-
-| Módulo | Principais funcionalidades |
-|---|---|
-| Usuários e permissões | Login, cadastro, gerenciamento de perfis e níveis de acesso. |
-| Gestão de tarefas | Criação, edição, atribuição, definição de prazos e conclusão de atividades. |
-| Calendário | Organização de eventos, reuniões e compromissos. |
-| Notificações | Alertas, lembretes e avisos automáticos. |
-| Micro-ESG | Registro e estimativa de impactos ambientais associados às atividades. |
-| Metas ESG | Definição, acompanhamento e visualização de objetivos sustentáveis. |
-| Gamificação | Eco-Score, medalhas, conquistas e recompensas. |
-| Carga de trabalho | Cálculo da ocupação dos colaboradores e alertas de sobrecarga. |
-| Dashboard | Visualização integrada de indicadores operacionais e ambientais. |
-
-Essa organização permitirá que os módulos sejam desenvolvidos e mantidos de maneira estruturada, respeitando suas responsabilidades e mantendo a integração entre as funcionalidades.
-
-## 9. Estrutura de pastas sugerida
-
-O backend será organizado de acordo com a arquitetura em camadas, mantendo os arquivos agrupados por responsabilidade.
-
-```text
-backend/
-└── src/
-    ├── controllers/
-    │   ├── AuthController.java
-    │   ├── TarefaController.java
-    │   ├── CalendarioController.java
-    │   └── MicroEsgController.java
-    │
-    ├── services/
-    │   ├── AuthService.java
-    │   ├── UsuarioService.java
-    │   ├── TarefaService.java
-    │   ├── CalendarioService.java
-    │   ├── MicroEsgService.java
-    │   ├── GamificacaoService.java
-    │   └── DashboardService.java
-    │
-    ├── repositories/
-    │   ├── UsuarioRepository.java
-    │   ├── TarefaRepository.java
-    │   └── EventoRepository.java
-    │
-    ├── models/
-    │   ├── Usuario.java
-    │   ├── Tarefa.java
-    │   ├── Evento.java
-    │   └── MetaEsg.java
-    │
-    ├── dtos/
-    ├── middleware/
-    ├── config/
-    └── ...
-```
-
-O frontend Web e o aplicativo Mobile possuirão estruturas próprias, organizadas de acordo com suas respectivas tecnologias, consumindo os mesmos endpoints disponibilizados pelo backend.
-
-## 10. Tecnologias e ferramentas previstas
+## 7. Tecnologias
 
 | Componente | Tecnologia | Finalidade |
 |---|---|---|
-| Frontend Web | React + TypeScript | Desenvolvimento da interface Web. |
-| Ferramenta de build | Vite | Inicialização e compilação do frontend Web. |
-| Frontend Mobile | Flutter | Desenvolvimento do aplicativo Android e iOS. |
-| Backend | Java + Spring Boot | Implementação da API REST e das regras de negócio. |
-| Comunicação | API REST (HTTP/JSON) | Integração entre frontend e backend. |
-| Banco de dados | PostgreSQL | Armazenamento e gerenciamento das informações. |
-| Autenticação | Spring Security + JWT | Autenticação e controle de acesso. |
-| Versionamento | Git + GitHub | Controle de versões e colaboração no desenvolvimento. |
+| Frontend Web | React + TypeScript | Interface de gestão e dashboard |
+| Build Web | Vite | Build e desenvolvimento local |
+| Mobile | Flutter | Registro e acompanhamento pelo colaborador |
+| Backend | Java + Spring Boot | API e regras de negócio |
+| Comunicação | REST HTTP/JSON | Integração das interfaces |
+| Banco | PostgreSQL | Persistência e integridade |
+| Segurança | Spring Security + JWT | Autenticação e autorização |
+| Migrações | Flyway ou Liquibase — a decidir | Evolução versionada do esquema |
 
-## 11. Definição do modelo de implantação
+## 8. Estrutura de pastas sugerida
 
-O backend será desenvolvido utilizando o modelo de **monólito modular**, no qual todos os módulos funcionais serão mantidos em uma única aplicação, mas organizados internamente de maneira independente.
+```text
+backend/src/main/java/.../
+  auth/{controller,service,repository,model,dto}/
+  organizacoes/{controller,service,repository,model,dto}/
+  carbono/{controller,service,repository,model,dto}/
+  fatores/{controller,service,repository,model,dto}/
+  calculos/{controller,service,repository,model,dto}/
+  metas/{controller,service,repository,model,dto}/
+  acoes/{controller,service,repository,model,dto}/
+  dashboard/{controller,service,repository,dto}/
+  config/
+```
 
-Essa abordagem foi escolhida por apresentar menor complexidade de desenvolvimento e implantação em comparação com uma arquitetura baseada em microsserviços, sendo mais adequada ao escopo e às necessidades atuais do projeto.
+Os projetos `frontend/`, `mobile/` e `backend/` ainda não existem no repositório. Esta árvore é proposta e não deve ser descrita como estrutura implementada.
 
-Entre suas principais vantagens estão:
+## 9. Decisões pendentes
 
-- **Menor complexidade:** não exige a configuração e manutenção de diversos serviços independentes.
-- **Facilidade de desenvolvimento:** permite concentrar a implementação e os testes em uma única aplicação backend.
-- **Organização:** mantém as funcionalidades separadas em módulos com responsabilidades específicas.
-- **Possibilidade de expansão:** permite que módulos sejam separados futuramente, caso exista necessidade de escalabilidade independente.
+- Definir matriz RBAC e regras de acesso a registros individuais e agregados.
+- Aprovar fontes, unidades, métodos e validade dos fatores de energia/mobilidade.
+- Definir estados e transições de atividade/cálculo/meta/ação e idempotência dos registros.
+- Definir endpoints, paginação/filtros, formatos de erro e autenticação dos contratos REST.
+- Escolher Flyway/Liquibase e ambiente de implantação.
+- Confirmar limites de privacidade e dados necessários para cada fonte.
 
-## 12. Justificativa da escolha arquitetural
+## 10. Referências
 
-A arquitetura em camadas, combinada com o padrão MVC, a comunicação por API REST e a organização em monólito modular, foi escolhida por oferecer uma estrutura organizada, flexível e adequada às necessidades do sistema.
-
-A separação entre apresentação, controle, negócio e acesso a dados facilita a manutenção, reduz o acoplamento e permite que diferentes interfaces utilizem as mesmas regras de negócio.
-
-A utilização de React com TypeScript no frontend Web e Flutter no aplicativo Mobile possibilita oferecer experiências específicas para cada plataforma, enquanto o backend desenvolvido em Java com Spring Boot centraliza o processamento das informações e a execução das regras do sistema.
-
-Dessa forma, a arquitetura proposta atende aos requisitos funcionais e não funcionais identificados, permitindo o desenvolvimento das funcionalidades de gestão operacional, sustentabilidade e acompanhamento gerencial, além de possibilitar futuras expansões.
+Modelo lógico conceitual: [`../der/DER_Acorde.md`](../der/DER_Acorde.md). Requisitos: [`../requisitos/requisitos-funcionais.md`](../requisitos/requisitos-funcionais.md) e [`../requisitos/requisitos-nao-funcionais.md`](../requisitos/requisitos-nao-funcionais.md).

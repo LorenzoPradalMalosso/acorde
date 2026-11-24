@@ -1,30 +1,31 @@
-# Cronograma do TCC — 6 semanas
+# Cronograma do TCC — Acorde 2.0 — 6 semanas
 
-> Planejamento de execução baseado na situação de aprendizagem e nos critérios avaliativos apresentados. Preencher datas e nomes de responsáveis após definição da equipe.
+> **Versão do sistema: 2.0.** Proposta de planejamento, não registro de trabalho executado. Datas, responsáveis, piloto e fatores devem ser definidos pela equipe. Se o recorte exceder a capacidade, validar a redução com o professor.
 
-| Semana | Objetivo | Entregáveis | Evidências a guardar |
-| --- | --- | --- | --- |
-| 1 | Pesquisa e planejamento | Problema real, requisitos iniciais, wireframes, papéis e planejamento | Registro de validação do problema, requisitos, fluxos e quadro de tarefas |
-| 2 | Arquitetura e base técnica | Monorepositório, ambiente, arquitetura, navegação inicial e primeiras funcionalidades | Prints de telas iniciais, commits, documentação do setup e revisão do professor |
-| 3 | Implementação do fluxo principal | Login, tarefas, API, persistência e início de integração Mobile | Testes de CRUD, respostas da API, prints do Web e Mobile |
-| 4 | Integração, Micro-ESG e testes | Jornada integrada, estimativa de papel, dashboard básico e tratamento de erros | Vídeo/prints de demonstração ponta a ponta, casos de teste executados |
-| 5 | Qualidade e documentação final | Revisão, correções, diagrama de classes, banco, APIs, manual e slides | Registro de testes, documentação atualizada, roteiro e versão de entrega |
-| 6 | Apresentação final | Demonstração prática e exposição da equipe (até 15 minutos) | Slides, roteiro, gravação da demonstração se permitido |
+| Semana | Objetivo | Entregáveis prioritários | Evidências a guardar |
+|---|---|---|---|
+| 1 | Validar problema e método | Organização piloto; entrevistas/evidências; fontes e unidades; requisitos v2; RBAC; DER revisado; escolha de migrações | Registro autorizado, decisões, revisão docente e critérios de aceite |
+| 2 | Fundação técnica | Monorepo; PostgreSQL; migrações iniciais; login e isolamento organizacional; navegação Web/Mobile | Setup reproduzível, primeiras telas e commits/PRs |
+| 3 | Fontes e cálculo | Registro de energia Web e deslocamento Mobile; fatores versionados; cálculo no backend e estados pendentes | Cálculos com dados de teste claramente identificados, persistência e validações |
+| 4 | Integração e indicadores | Fluxo Web/Mobile/API; histórico; dashboard por fonte/período; cobertura e tratamento de erros | Jornada integrada e conferência dos dados persistidos |
+| 5 | Metas, ações e qualidade | Meta-base, ações com responsáveis; acessibilidade, segurança, desempenho, testes e documentação | Resultados de teste, DER/API atualizados, manual e revisão de escopo |
+| 6 | Demonstração | Apresentação de até 15 minutos e demonstração ponta a ponta | Roteiro, dados de demonstração identificados, evidências e participação da equipe |
+
+## Jornada de demonstração planejada
+
+Gestor registra energia → colaborador registra deslocamento no Mobile → API valida e calcula com fatores compatíveis → backend persiste histórico → dashboard mostra dados parciais e cobertura → gestor define meta e ação → colaborador atualiza estado → Web reflete os registros e progresso.
 
 ## Planejamento de equipe
 
 | Integrante | Papel principal | Tarefas desta sprint | Evidência de participação |
-| --- | --- | --- | --- |
+|---|---|---|---|
 | A definir | A definir | A definir | Issues, commits e PRs |
 
 ## Regras de acompanhamento
 
-- Atualizar o quadro de tarefas ao menos em cada mudança de estado.
-- Registrar decisões técnicas e justificativas em `../decisoes.md`.
-- Manter um relatório por sprint em `../sprints/`.
-- Reservar a quinta semana para estabilização e documentação; não iniciar grandes módulos nela.
-- Validar com o professor qualquer redução formal do escopo de requisitos.
-
-## Avaliação
-
-Os critérios publicados incluem clareza do problema, requisitos, prototipagem, divisão de tarefas, arquitetura, implementação, APIs/banco, testes, qualidade do código, tratamento de exceções, documentação, apresentação e participação individual. O professor deve confirmar dúvidas sobre pesos e exigências específicas.
+- Atualizar quadro e relatório de sprint; registrar decisões em `../decisoes.md`.
+- Usar branches e pull requests revisáveis.
+- Não afirmar fatores reais, validação, compatibilidade ou testes sem evidência.
+- Manter a quinta semana para estabilização; não iniciar módulos fora do MVP.
+- Priorizar integração e cálculo rastreável antes de ampliar telas.
+- Validar formalmente com o professor qualquer redução ou retirada de requisito acadêmico.

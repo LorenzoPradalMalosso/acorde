@@ -1,10 +1,8 @@
-// ACORDE — Modelo lógico proposto para PostgreSQL
-// Base do MVP: organizacoes, usuarios, membros, tarefas, tags_verdes, tarefas_tags, registros_impacto.
-// Demais entidades estão documentadas como FUTURO; não precisam ser criadas no sprint inicial.
-// Importar em https://dbdiagram.io/ para editar o DER.
-Project Acorde {
+// Acorde 2.0 — modelo conceitual para PostgreSQL.
+// NÃO implementado. Validar fatores, escopos, RBAC e constraints antes de gerar migrações.
+Project Acorde20 {
   database_type: 'PostgreSQL'
-  Note: 'Modelo proposto. Validar escopo e regras com a equipe/professor antes da implementacao.'
+  Note: 'Proposta. O MVP monitora energia e deslocamento; outras fontes são expansão.'
 }
 
 Table organizacoes {
@@ -17,7 +15,7 @@ Table usuarios {
   id uuid [pk]
   nome varchar(160) [not null]
   email varchar(255) [not null, unique]
-  senha_hash varchar(255) [not null, note: 'Hash seguro: BCrypt/Argon2id, nao criptografia reversivel']
+  senha_hash varchar(255) [not null, note: 'BCrypt/Argon2id; nunca texto puro']
   ativo boolean [not null, default: true]
   criado_em timestamptz [not null, default: `now()`]
 }
@@ -27,7 +25,6 @@ Table membros {
   organizacao_id uuid [not null, ref: > organizacoes.id]
   usuario_id uuid [not null, ref: > usuarios.id]
   papel varchar(20) [not null, note: 'GESTOR | COLABORADOR']
-  capacidade_semanal_horas numeric(6,2) [note: 'Padrao opcional; capacidade por semana pode sobrescrever']
   ativo boolean [not null, default: true]
   ingressou_em timestamptz [not null, default: `now()`]
   indexes {
@@ -36,183 +33,135 @@ Table membros {
   }
 }
 
-Table tarefas {
+Table atividades_emissoras {
   id uuid [pk]
   organizacao_id uuid [not null, ref: > organizacoes.id]
-  criado_por_membro_id uuid [not null, ref: > membros.id]
-  responsavel_membro_id uuid [ref: > membros.id]
-  titulo varchar(180) [not null]
-  descricao text
-  status varchar(24) [not null, note: 'A_FAZER | EM_ANDAMENTO | CONCLUIDA | CANCELADA']
-  prioridade varchar(16) [not null, note: 'BAIXA | MEDIA | ALTA']
-  data_limite date
-  horas_estimadas numeric(6,2)
-  concluida_em timestamptz
+  membro_id uuid [not null, ref: > membros.id]
+  categoria varchar(40) [not null, note: 'ENERGIA_ELETRICA | DESLOCAMENTO | expansões futuras']
+  periodo_inicio date [not null]
+  periodo_fim date [not null]
+  quantidade numeric(14,4) [note: 'Revisar possível redundância com detalhes tipados']
+  unidade varchar(40)
+  estado varchar(24) [not null, note: 'RASCUNHO | PENDENTE | CALCULADA | INVALIDADA']
   criado_em timestamptz [not null, default: `now()`]
   atualizado_em timestamptz [not null, default: `now()`]
   indexes {
-    (organizacao_id, status)
-    (responsavel_membro_id, data_limite)
+    (organizacao_id, categoria, periodo_inicio)
+    (membro_id, periodo_inicio)
   }
 }
 
-Table tags_verdes {
-  id uuid [pk]
-  codigo varchar(60) [not null, unique]
-  nome varchar(100) [not null]
-  descricao text
-  tipo_indicador varchar(40) [not null, note: 'Ex.: FOLHAS_EVITADAS ou CO2_KG_ESTIMADO']
-  ativa boolean [not null, default: true]
+Table dados_energia {
+  atividade_id uuid [pk, ref: - atividades_emissoras.id]
+  consumo_kwh numeric(14,4) [not null]
+  regiao_rede varchar(100) [not null, note: 'Granularidade mínima necessária ao fator; sem endereço']
 }
 
-Table tarefas_tags {
-  id uuid [pk]
-  tarefa_id uuid [not null, ref: > tarefas.id]
-  tag_verde_id uuid [not null, ref: > tags_verdes.id]
-  associada_em timestamptz [not null, default: `now()`]
-  indexes {
-    (tarefa_id, tag_verde_id) [unique]
-  }
+Table dados_deslocamento {
+  atividade_id uuid [pk, ref: - atividades_emissoras.id]
+  modalidade varchar(40) [not null]
+  distancia_ida_volta_km numeric(12,3) [not null]
+  dias_viagens numeric(8,2) [not null]
+  ocupacao numeric(6,2) [note: 'Quando exigida por fator veículo-km/alocação por passageiro']
 }
 
-Table registros_impacto {
+Table fatores_emissao {
   id uuid [pk]
-  tarefa_tag_id uuid [unique, ref: > tarefas_tags.id, note: 'MVP: vinculo com tarefa. FUTURO: pode ser nulo se evento_tag_id estiver preenchido']
-  evento_tag_id uuid [unique, ref: > eventos_tags.id, note: 'FUTURO: para reunioes. CHECK: exatamente um dos dois vinculos presente']
-  quantidade_base numeric(12,3) [not null]
-  unidade_base varchar(30) [not null]
-  fator_conversao numeric(16,6) [not null]
-  valor_estimado numeric(14,4) [not null]
-  unidade_resultado varchar(30) [not null]
-  fonte_fator text [not null]
+  codigo varchar(80) [not null]
+  categoria varchar(40) [not null]
+  escopo varchar(20) [not null, note: 'Ex.: ESCOPO_2, ESCOPO_3_CAT_7']
+  valor numeric(18,8) [not null]
+  unidade_atividade varchar(50) [not null]
+  unidade_resultado varchar(50) [not null, note: 'MVP: kg CO2e']
+  fonte varchar(255) [not null]
+  versao varchar(100) [not null]
+  valido_desde date [not null]
+  valido_ate date
+  regiao varchar(100) [not null]
   premissas text
-  calculado_em timestamptz [not null, default: `now()`]
-  Note: 'Estimativa, nao comprovacao de economia real. Persistir o fator e a fonte. No MVP o evento_tag_id ainda nao existe.'
+  criado_em timestamptz [not null, default: `now()`]
+  indexes {
+    (codigo, versao) [unique]
+    (categoria, regiao, valido_desde)
+  }
+  Note: 'Versões imutáveis; corrigir fator criando nova versão, sem reescrever cálculo histórico.'
 }
 
-// FUTURO — calendario / agendamentos (RF01, RF04)
-Table eventos {
+Table registros_emissao {
+  id uuid [pk]
+  atividade_id uuid [not null, ref: > atividades_emissoras.id]
+  fator_id uuid [ref: > fatores_emissao.id, note: 'Nulo se cálculo pendente sem fator aplicável']
+  quantidade_aplicada numeric(14,4)
+  unidade_aplicada varchar(50)
+  fator_aplicado numeric(18,8)
+  unidade_resultado varchar(50)
+  resultado_kg_co2e numeric(18,6)
+  estado varchar(24) [not null, note: 'PENDENTE | VALIDO | SUBSTITUIDO | INVALIDO']
+  motivo_pendencia text
+  vigente boolean [not null, default: false]
+  calculado_em timestamptz [not null, default: `now()`]
+  indexes {
+    (atividade_id, calculado_em)
+  }
+  Note: 'Constraint parcial no PostgreSQL deve limitar uma revisão vigente por atividade. Somente cálculos válidos vigentes entram nos totais.'
+}
+
+Table metas_carbono {
   id uuid [pk]
   organizacao_id uuid [not null, ref: > organizacoes.id]
-  criado_por_membro_id uuid [not null, ref: > membros.id]
-  aprovado_por_membro_id uuid [ref: > membros.id]
+  categoria varchar(40) [note: 'Nulo = fontes selecionadas cobertas pela metodologia definida']
+  periodo_base_inicio date [not null]
+  periodo_base_fim date [not null]
+  valor_base_kg_co2e numeric(18,6) [not null]
+  reducao_alvo_percentual numeric(7,4) [not null]
+  prazo date [not null]
+  estado varchar(24) [not null, note: 'RASCUNHO | ATIVA | CONCLUIDA | CANCELADA']
+  criado_em timestamptz [not null, default: `now()`]
+}
+
+Table acoes_reducao {
+  id uuid [pk]
+  meta_id uuid [not null, ref: > metas_carbono.id]
+  responsavel_membro_id uuid [not null, ref: > membros.id]
   titulo varchar(180) [not null]
   descricao text
-  inicio_em timestamptz [not null]
-  fim_em timestamptz [not null]
-  modalidade varchar(16) [note: 'PRESENCIAL | ONLINE']
-  status_aprovacao varchar(20) [not null, note: 'PENDENTE | APROVADO | REJEITADO']
-  decidido_em timestamptz
+  prazo date
+  estado varchar(24) [not null, note: 'A_FAZER | EM_ANDAMENTO | CONCLUIDA | CANCELADA']
   criado_em timestamptz [not null, default: `now()`]
+  atualizado_em timestamptz [not null, default: `now()`]
 }
 
-Table eventos_participantes {
-  evento_id uuid [not null, ref: > eventos.id]
-  membro_id uuid [not null, ref: > membros.id]
-  confirmacao varchar(20) [note: 'PENDENTE | CONFIRMADO | RECUSADO']
-  indexes { (evento_id, membro_id) [pk] }
+// Expansões: cada detalhe pertence a uma atividade emissora da categoria correspondente.
+Table dados_combustivel_frota {
+  atividade_id uuid [pk, ref: - atividades_emissoras.id]
+  tipo_combustivel varchar(60) [not null]
+  quantidade numeric(14,4) [not null]
+  unidade varchar(40) [not null]
 }
 
-Table eventos_tags {
-  id uuid [pk]
-  evento_id uuid [not null, ref: > eventos.id]
-  tag_verde_id uuid [not null, ref: > tags_verdes.id]
-  indexes { (evento_id, tag_verde_id) [unique] }
+Table dados_viagem_corporativa {
+  atividade_id uuid [pk, ref: - atividades_emissoras.id]
+  modalidade varchar(40) [not null]
+  distancia_km numeric(14,3) [not null]
+  classe varchar(40)
+  passageiros numeric(8,2)
 }
 
-// FUTURO — mural e alertas (RF02, RF03)
-Table lembretes {
-  id uuid [pk]
-  organizacao_id uuid [not null, ref: > organizacoes.id]
-  autor_membro_id uuid [not null, ref: > membros.id]
-  titulo varchar(160) [not null]
-  conteudo text
-  prioridade varchar(16)
-  fixado boolean [default: false]
-  expira_em timestamptz
-  criado_em timestamptz [not null, default: `now()`]
+Table dados_materiais_residuos {
+  atividade_id uuid [pk, ref: - atividades_emissoras.id]
+  material varchar(80) [not null]
+  quantidade numeric(14,4) [not null]
+  unidade varchar(40) [not null]
+  destino varchar(80)
 }
 
-Table notificacoes {
+Table notificacoes_ambientais {
   id uuid [pk]
   membro_id uuid [not null, ref: > membros.id]
-  tarefa_id uuid [ref: > tarefas.id]
-  evento_id uuid [ref: > eventos.id]
+  meta_id uuid [ref: > metas_carbono.id]
+  atividade_id uuid [ref: > atividades_emissoras.id]
   tipo varchar(40) [not null]
-  titulo varchar(160) [not null]
-  mensagem text
+  mensagem text [not null]
   criada_em timestamptz [not null, default: `now()`]
   lida_em timestamptz
-}
-
-// FUTURO — metas ESG e carga de trabalho (RF07, RF09)
-Table metas_esg {
-  id uuid [pk]
-  organizacao_id uuid [not null, ref: > organizacoes.id]
-  titulo varchar(180) [not null]
-  eixo varchar(20) [not null, note: 'AMBIENTAL | SOCIAL | GOVERNANCA']
-  indicador varchar(60) [not null]
-  unidade varchar(30) [not null]
-  valor_alvo numeric(14,4) [not null]
-  data_inicio date
-  data_fim date
-}
-
-Table medicoes_meta {
-  id uuid [pk]
-  meta_esg_id uuid [not null, ref: > metas_esg.id]
-  registro_impacto_id uuid [ref: > registros_impacto.id]
-  registrado_por_membro_id uuid [ref: > membros.id]
-  origem varchar(20) [not null, note: 'MANUAL | REGISTRO_IMPACTO']
-  valor numeric(14,4) [not null]
-  registrado_em timestamptz [not null, default: `now()`]
-  indexes { (meta_esg_id, registro_impacto_id) [unique] }
-}
-
-Table disponibilidades_semanais {
-  id uuid [pk]
-  membro_id uuid [not null, ref: > membros.id]
-  semana_inicio date [not null]
-  horas_disponiveis numeric(6,2) [not null]
-  indexes { (membro_id, semana_inicio) [unique] }
-}
-
-// FUTURO — Eco-Score e insignias (RF08)
-Table regras_pontuacao {
-  id uuid [pk]
-  codigo varchar(60) [not null, unique]
-  descricao text
-  pontos integer [not null]
-  ativa boolean [default: true]
-}
-
-Table movimentacoes_pontos {
-  id uuid [pk]
-  membro_id uuid [not null, ref: > membros.id]
-  regra_id uuid [not null, ref: > regras_pontuacao.id]
-  tarefa_id uuid [ref: > tarefas.id]
-  registro_impacto_id uuid [ref: > registros_impacto.id]
-  pontos_aplicados integer [not null]
-  gerado_em timestamptz [not null, default: `now()`]
-}
-
-Table insignias {
-  id uuid [pk]
-  nome varchar(100) [not null]
-  descricao text
-  criterio text
-}
-
-Table conquistas_membro {
-  membro_id uuid [not null, ref: > membros.id]
-  insignia_id uuid [not null, ref: > insignias.id]
-  concedida_em timestamptz [not null, default: `now()`]
-  indexes { (membro_id, insignia_id) [pk] }
-}
-
-Table conquistas_organizacao {
-  organizacao_id uuid [not null, ref: > organizacoes.id]
-  insignia_id uuid [not null, ref: > insignias.id]
-  concedida_em timestamptz [not null, default: `now()`]
-  indexes { (organizacao_id, insignia_id) [pk] }
 }

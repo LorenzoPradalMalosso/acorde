@@ -1,11 +1,10 @@
-# Pacote do DER — Acorde
+# Pacote do DER — Acorde 2.0
 
-- `DER_Acorde.md` — documento principal com o modelo do MVP, diagramas Mermaid e regras de integridade.
-- `DER_MVP.png` / `.svg` — diagrama do MVP em imagem e vetor.
-- `DER_MVP.mmd` — Mermaid editável do modelo principal.
-- `futuro/DER_Expansoes.md` — resumo e relações previstas para módulos além do MVP.
-- `futuro/DER_Modulos.png` / `.svg` — mapa de entidades de módulos futuros.
-- `futuro/DER_Modulos_Futuros.mmd` — Mermaid com módulos de expansão.
-- `futuro/DER_Completo.dbml` — modelo lógico completo, editável no dbdiagram.io.
+> Os modelos são propostas conceituais, não representam banco implementado. A fonte editável principal do MVP é `DER_MVP.mmd`, espelhada em `DER_Acorde.md`. Revisar fontes, unidades, estados e autorização antes de gerar migrações.
 
-> Os modelos são **propostas**, não representam estrutura já implementada. O MVP contém 7 entidades; consulte `futuro/` somente se módulos adicionais forem priorizados.
+- `DER_Acorde.md` — modelo principal, regras de integridade e pendências.
+- `DER_MVP.mmd` — diagrama Mermaid editável do MVP 2.0.
+- `DER_Completo.dbml` — modelo lógico proposto incluindo expansões.
+- `futuro/DER_Expansoes.md` — entidades adiadas e regras futuras.
+- `DER_MVP.svg` / `DER_MVP.png` — diagrama estático do modelo conceitual 2.0.
+- `futuro/DER_Modulos_Futuros.mmd`, `.svg` e `.png` — visão editável e estática das expansões de carbono.
