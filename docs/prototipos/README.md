@@ -1,6 +1,6 @@
 # Protótipos e fluxos de interface
 
-A documentação inicial registra protótipos Web e Mobile criados no Google Stitch.
+A documentação inicial registra protótipos Web e Mobile criados no Figma.
 
 > Antes de publicar URLs neste repositório, confirmar acesso e permissões. Não adicionar links de convite privados, credenciais ou dados pessoais.
 
