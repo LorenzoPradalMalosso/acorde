@@ -1,6 +1,6 @@
 # Pacote do DER — Acorde 2.0
 
-> Os modelos são propostas conceituais, não representam banco implementado. A fonte editável principal do MVP é `DER_MVP.mmd`, espelhada em `DER_Acorde.md`. Revisar fontes, unidades, estados e autorização antes de gerar migrações.
+> `organizacoes`, `usuarios`, `membros` e `sessoes_autenticacao` estão em `V2`; fatores, atividades e revisões de cálculo estão em desenvolvimento em `V3`. Metas e ações continuam conceituais. O `DER_MVP.mmd` e os SVG/PNG são visão conceitual e não representam cada constraint física; consulte as migrations e `DER_Acorde.md` para o esquema implementado. Fatores reais e metodologia seguem pendentes.
 
 - `DER_Acorde.md` — modelo principal, regras de integridade e pendências.
 - `DER_MVP.mmd` — diagrama Mermaid editável do MVP 2.0.

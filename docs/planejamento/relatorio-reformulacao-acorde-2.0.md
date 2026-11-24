@@ -2,7 +2,7 @@
 
 **Data:** 24 de novembro de 2026  
 **Versão do sistema:** Acorde 2.0  
-**Estado:** reformulação documental iniciada; produto ainda não implementado  
+**Estado atual:** reformulação documental concluída; Fase 2 de implementação registrada abaixo
 **Referência conceitual:** `Acorde_2.0_Contexto_Codex.pdf`
 
 ## 1. Resumo da mudança
@@ -39,13 +39,13 @@ Os fatores reais e sua metodologia ainda precisam de pesquisa e aprovação. Val
 
 ## 5. Validações pendentes e riscos
 
-O piloto e a necessidade ainda não foram validados em campo. Faltam aprovação acadêmica formal do escopo, seleção de fatores e métodos de cálculo, matriz RBAC, regras detalhadas de estados e contratos REST, escolha de ferramenta de migração e avaliação da capacidade de entregar duas fontes, duas interfaces, cálculo, dashboard, metas e ações em seis semanas.
+O piloto e a necessidade ainda não foram validados em campo. Faltam aprovação acadêmica formal do escopo, seleção de fatores e métodos de cálculo, RBAC/estados para os módulos de negócio e avaliação da capacidade de entregar duas fontes, duas interfaces, cálculo, dashboard, metas e ações em seis semanas. RBAC de membros e contratos REST de autenticação foram formalizados para a Fase 2; Flyway foi escolhido em D-004.
 
 O cronograma 2.0 deve ser tratado como plano proposto. Caso a equipe não consiga manter a jornada integrada com qualidade, reduzir o escopo e registrar a decisão com o professor, sem alegar cobertura ou impacto que os dados não sustentem.
 
 ## 6. Estado de implementação
 
-O repositório contém documentação e Brand Kit. Não foram encontrados projetos de frontend, backend ou mobile. Protótipos mencionados ainda não estão validados; nenhum teste está registrado como executado. Esta atualização não implementa o sistema nem confirma validação de campo.
+A base de Web, Mobile e API e os fluxos de autenticação/organizações foram implementados. Migrations `V1`/`V2`, API conectada, login, sessões, RBAC e isolamento foram verificados em PostgreSQL 18.6 isolado; detalhes e limites estão em [`../testes/evidencias-fase-02.md`](../testes/evidencias-fase-02.md). Nenhum módulo de carbono foi implementado. Protótipos e validação de campo permanecem pendentes.
 
 ## 7. Documentos de referência
 

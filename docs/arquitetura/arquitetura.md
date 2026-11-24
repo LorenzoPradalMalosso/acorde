@@ -1,6 +1,6 @@
 # Arquitetura do sistema — Acorde 2.0
 
-> **Versão do sistema: 2.0.** Este documento especifica uma arquitetura proposta; não há código de aplicação implementado. Stack e decisões arquiteturais gerais já estabelecidas são preservadas.
+> **Versão do sistema: 2.0.** A Fase 1 preparou a base técnica; a Fase 2 implementa autenticação, organizações e membros. Módulos de carbono, fatores, cálculos, metas, ações e dashboard permanecem por implementar. Stack e decisões arquiteturais gerais são preservadas.
 
 ## 1. Decisões preservadas
 
@@ -80,7 +80,7 @@ A forma de versionar fator/cálculo e a unicidade de uma versão vigente precisa
 
 ## 6. Segurança, privacidade e consistência
 
-- Spring Security + JWT; hash seguro de senhas (BCrypt/Argon2id).
+- Spring Security + JWT; senhas BCrypt; access token HS256 de 15 minutos associado a sessão persistida e revogável.
 - Autorizar toda leitura e mutação no backend, com organização derivada do usuário autenticado.
 - Aplicar FKs/constraints e, quando apropriado, chaves compostas que impeçam vínculos entre organizações.
 - Coletar apenas dados de mobilidade necessários ao cálculo; não exigir endereço/GPS automático sem justificativa validada.
@@ -98,7 +98,7 @@ A forma de versionar fator/cálculo e a unicidade de uma versão vigente precisa
 | Comunicação | REST HTTP/JSON | Integração das interfaces |
 | Banco | PostgreSQL | Persistência e integridade |
 | Segurança | Spring Security + JWT | Autenticação e autorização |
-| Migrações | Flyway ou Liquibase — a decidir | Evolução versionada do esquema |
+| Migrações | Flyway | Migrações SQL versionadas; `V1` baseline, `V2` auth/organizações |
 
 ## 8. Estrutura de pastas sugerida
 
@@ -115,15 +115,15 @@ backend/src/main/java/.../
   config/
 ```
 
-Os projetos `frontend/`, `mobile/` e `backend/` ainda não existem no repositório. Esta árvore é proposta e não deve ser descrita como estrutura implementada.
+Os projetos `frontend/`, `mobile/` e `backend/` já existem. A árvore por domínio está parcialmente implementada: `auth`, `organizacoes` e `platform`; os módulos listados para fases posteriores permanecem reservas sem lógica de negócio.
 
 ## 9. Decisões pendentes
 
-- Definir matriz RBAC e regras de acesso a registros individuais e agregados.
+- Completar matriz RBAC para atividades, fatores, cálculos, metas e ações antes de suas fases.
 - Aprovar fontes, unidades, métodos e validade dos fatores de energia/mobilidade.
 - Definir estados e transições de atividade/cálculo/meta/ação e idempotência dos registros.
-- Definir endpoints, paginação/filtros, formatos de erro e autenticação dos contratos REST.
-- Escolher Flyway/Liquibase e ambiente de implantação.
+- Definir contratos REST de negócio, paginação e filtros; auth/organizações estão em [`../api/autenticacao-organizacoes.md`](../api/autenticacao-organizacoes.md).
+- Definir ambiente de implantação; Flyway foi escolhido em D-004.
 - Confirmar limites de privacidade e dados necessários para cada fonte.
 
 ## 10. Referências

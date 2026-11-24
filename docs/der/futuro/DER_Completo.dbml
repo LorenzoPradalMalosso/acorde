@@ -1,5 +1,5 @@
 // Acorde 2.0 — modelo conceitual para PostgreSQL.
-// NÃO implementado. Validar fatores, escopos, RBAC e constraints antes de gerar migrações.
+// Auth/organizações/sessões implementados em V2; as demais entidades abaixo são propostas.
 Project Acorde20 {
   database_type: 'PostgreSQL'
   Note: 'Proposta. O MVP monitora energia e deslocamento; outras fontes são expansão.'
@@ -31,6 +31,15 @@ Table membros {
     (organizacao_id, usuario_id) [unique]
     (organizacao_id, id) [unique]
   }
+}
+
+Table sessoes_autenticacao {
+  id uuid [pk, note: 'jti da sessão JWT']
+  membro_id uuid [not null, ref: > membros.id]
+  criado_em timestamptz [not null]
+  expira_em timestamptz [not null]
+  revogado_em timestamptz
+  Note: 'Migração V2 implementada; access token expira em 15 minutos e logout revoga o jti.'
 }
 
 Table atividades_emissoras {

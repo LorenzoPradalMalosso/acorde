@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: ${ACORDE_TEST_DB_URL:jdbc:postgresql://localhost:5434/acorde_test}
+    username: ${ACORDE_TEST_DB_USERNAME:acorde_test}
+    password: ${ACORDE_TEST_DB_PASSWORD:acorde_test}
+  jpa:
+    hibernate:
+      ddl-auto: ${ACORDE_TEST_DDL_AUTO:none}
+    open-in-view: false
+  flyway:
+    enabled: ${ACORDE_TEST_FLYWAY_ENABLED:true}
+acorde:
+  security:
+    jwt:
+      secret-base64: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+      issuer: acorde-api-test
+      access-token-ttl: PT15M
+logging:
+  level:
+    root: WARN

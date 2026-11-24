@@ -1,10 +1,6 @@
 # Protótipos e fluxos — Acorde 2.0
 
-<<<<<<< HEAD
-> **Versão do sistema: 2.0. Status dos protótipos: pendente de confirmação.** A documentação inicial menciona Google Stitch, mas não contém links validados nem evidência de que os protótipos representam os fluxos desta versão.
-=======
-A documentação inicial registra protótipos Web e Mobile criados no Figma.
->>>>>>> a9785acc39cbe1846016a5561af09d3b4fa50917
+> **Versão do sistema: 2.0. Status dos protótipos: pendente de confirmação.** O histórico da documentação diverge sobre a ferramenta usada (Figma ou Google Stitch). Não há links validados nem evidência de que protótipos existentes representem os fluxos desta versão. Confirmar ferramenta e artefatos com a equipe antes de atualizá-los.
 
 Antes de publicar URLs, confirmar acesso e permissões. Não incluir convites privados, credenciais ou dados pessoais. Usar identidade e tokens oficiais do Brand Kit.
 

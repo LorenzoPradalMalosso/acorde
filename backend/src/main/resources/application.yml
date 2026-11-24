@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: acorde-api
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/acorde}
+    username: ${DB_USERNAME:acorde}
+    password: ${DB_PASSWORD:acorde_local}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+server:
+  port: ${SERVER_PORT:8080}
+acorde:
+  demo:
+    password: ${ACORDE_DEMO_PASSWORD:}
+  security:
+    jwt:
+      secret-base64: ${JWT_SECRET_BASE64}
+      issuer: acorde-api
+      access-token-ttl: PT15M

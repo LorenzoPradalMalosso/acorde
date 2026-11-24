@@ -17,7 +17,7 @@
 ---
 
 > [!IMPORTANT]
-> **Versão do sistema: Acorde 2.0.** Esta versão reposiciona o produto para monitorar fontes selecionadas de emissões e apoiar ações de redução. O repositório contém documentação e identidade visual; a implementação de Web, Mobile, backend e banco ainda não foi iniciada. Requisitos, DER e fluxos são propostas de desenvolvimento e não comprovam validação de campo ou fatores de emissão aprovados.
+> **Versão do sistema: Acorde 2.0.** Web, API, banco e Mobile estão implementados para o MVP, com validação automatizada de API em PostgreSQL, builds Web/Android e stack Docker local isolado. A demonstração usa apenas fatores sintéticos rotulados no perfil `local-demo`; nenhum fator real ou metodologia foi aprovado. Não houve deploy externo, e validações acadêmicas, de acessibilidade, dispositivos e operação continuam pendentes.
 
 O Acorde é uma plataforma colaborativa para **registrar atividades emissoras, calcular estimativas rastreáveis em kg CO₂e, acompanhar indicadores ambientais e organizar ações de redução**. O MVP prioriza energia elétrica e deslocamentos casa–trabalho. Os cálculos devem informar dados, unidade, fonte, versão e validade do fator utilizado; sem dados suficientes, o registro fica pendente e nenhum impacto é inventado.
 
@@ -70,6 +70,8 @@ Escopo detalhado e critérios: [`docs/planejamento/escopo-mvp.md`](docs/planejam
 
 Os requisitos funcionais da versão 2.0 usam a identificação **RF-v2-01 a RF-v2-09**, para não sobrescrever a baseline original RF01–RF11. A correspondência e os itens adiados/retirados estão em [`docs/requisitos/requisitos-funcionais.md`](docs/requisitos/requisitos-funcionais.md). A mudança foi registrada em [`docs/decisoes.md`](docs/decisoes.md), e o relatório está em [`docs/planejamento/relatorio-reformulacao-acorde-2.0.md`](docs/planejamento/relatorio-reformulacao-acorde-2.0.md).
 
+O trabalho de desenvolvimento deve seguir o [`plano de implementação`](docs/planejamento/plano-implementacao.md) e as instruções permanentes em [`AGENTS.md`](AGENTS.md). A Fase 0 prepara decisões e documentação; a Fase 1 cria infraestrutura e banco; decisões de piloto e metodologia continuam pendentes antes das fases de domínio correspondentes.
+
 ## Stack e arquitetura preservadas
 
 | Camada | Tecnologia |
@@ -93,6 +95,11 @@ Os RNFs documentados permanecem: desempenho, acessibilidade WCAG/eMAG, responsiv
 ```text
 .
 ├── README.md
+├── AGENTS.md
+├── docker-compose.yml
+├── backend/                # Spring Boot modular monolith
+├── frontend/               # React + TypeScript + Vite
+├── mobile/                 # Flutter
 ├── assets/branding/Acorde_Brand_Kit/
 └── docs/
     ├── arquitetura/
@@ -104,7 +111,38 @@ Os RNFs documentados permanecem: desempenho, acessibilidade WCAG/eMAG, responsiv
     └── testes/
 ```
 
-Os diretórios `backend/`, `frontend/` e `mobile/` ainda precisam ser criados quando a implementação começar. O estado dos protótipos e da validação de campo permanece pendente; dados de demonstração devem ser identificados como fictícios.
+Os diretórios `backend/`, `frontend/` e `mobile/` contêm a fundação técnica, autenticação, motor de carbono, registro de deslocamento, dashboard parcial e gestão operacional de metas/ações da versão 2.0. Há evidência automatizada de API no PostgreSQL e checks de build/lint/analyze; testes visuais em navegador e dispositivo, acessibilidade manual e RNFs continuam pendentes. Nenhum fator real foi aprovado; protótipos e validação de campo também não foram confirmados. Consulte o plano e as evidências antes de considerar uma fase aceita.
+
+## Desenvolvimento local — Fase 1
+
+Pré-requisitos: Git, Java 21, Node.js 24 LTS com npm, Flutter stable e Docker com Docker Compose. Na raiz, crie a configuração local a partir do exemplo e inicie o PostgreSQL:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+```
+
+Inicie a API (o script carrega `.env` e gera, se necessário, uma chave JWT aleatória local que fica apenas no `.env` ignorado pelo Git; Flyway aplica migrations pendentes):
+
+```powershell
+.\backend\run-local.ps1
+```
+
+Em outro terminal, inicie o frontend:
+
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
+
+O Vite encaminha `/api` para `http://localhost:8080`; configure `VITE_API_PROXY_TARGET` para outra URL se necessário. O health check fica em `http://localhost:8080/api/health`.
+
+Para testar o login em duas organizações isoladas, defina uma senha de demonstração somente no `.env` local (`ACORDE_DEMO_PASSWORD`, 12–72 bytes UTF-8) e execute `.\backend\run-local.ps1 -DemoData`. Esse perfil cria duas organizações e quatro contas fictícias apenas se as tabelas estiverem vazias; não o habilite em produção. A matriz RBAC e os contratos estão em [`docs/api/autenticacao-organizacoes.md`](docs/api/autenticacao-organizacoes.md).
+
+Para analisar/iniciar o Flutter, use `cd mobile`, `flutter pub get`, `flutter analyze`, `flutter test` e `flutter run`. Android Emulator usa `http://10.0.2.2:8080`; iOS Simulator usa `http://localhost:8080`. Em dispositivo físico, informe o endereço local do computador com `--dart-define=ACORDE_API_URL=http://<host>:8080`. HTTP local fica permitido apenas no Android debug e em destinos locais no iOS; ambientes publicados devem usar HTTPS. Web e Mobile mantêm o token apenas em memória e exigem login novamente após expiração/reinício.
+
+`.env.example` contém somente valores locais de desenvolvimento. Não use esses valores em ambientes compartilhados ou de produção. Consulte [`docs/planejamento/plano-implementacao.md`](docs/planejamento/plano-implementacao.md) e [`docs/testes/evidencias-fase-02.md`](docs/testes/evidencias-fase-02.md) para status, testes e limites de validação.
 
 ## Referências principais
 
@@ -114,6 +152,7 @@ Os diretórios `backend/`, `frontend/` e `mobile/` ainda precisam ser criados qu
 - [Cronograma](docs/planejamento/cronograma-6-semanas.md)
 - [Protótipos](docs/prototipos/README.md)
 - [Plano de testes](docs/testes/plano-testes.md)
+- [Relatório final de entrega e checklist](docs/testes/relatorio-final-entrega.md)
 - [Decisões](docs/decisoes.md)
 
 ---

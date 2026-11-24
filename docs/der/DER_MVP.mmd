@@ -1,7 +1,8 @@
-%% Acorde 2.0 — modelo conceitual proposto para o MVP; não implementado.
+%% Acorde 2.0 — diagrama conceitual; V2 auth e V3 fatores/atividades/revisões estão em migrations.
 erDiagram
     ORGANIZACOES ||--o{ MEMBROS : possui
     USUARIOS ||--o{ MEMBROS : participa
+    MEMBROS ||--o{ SESSOES_AUTENTICACAO : autentica
     ORGANIZACOES ||--o{ ATIVIDADES_EMISSORAS : monitora
     MEMBROS ||--o{ ATIVIDADES_EMISSORAS : registra
     ATIVIDADES_EMISSORAS ||--o| DADOS_ENERGIA : detalha
@@ -9,6 +10,7 @@ erDiagram
     ATIVIDADES_EMISSORAS ||--o{ REGISTROS_EMISSAO : calcula
     FATORES_EMISSAO ||--o{ REGISTROS_EMISSAO : utiliza
     ORGANIZACOES ||--o{ METAS_CARBONO : define
+    ORGANIZACOES ||--o{ ACOES_REDUCAO : delimita
     METAS_CARBONO ||--o{ ACOES_REDUCAO : organiza
     MEMBROS ||--o{ ACOES_REDUCAO : responsavel
 
@@ -31,6 +33,13 @@ erDiagram
         varchar papel
         boolean ativo
     }
+    SESSOES_AUTENTICACAO {
+        uuid id PK
+        uuid membro_id FK
+        timestamptz criado_em
+        timestamptz expira_em
+        timestamptz revogado_em
+    }
     ATIVIDADES_EMISSORAS {
         uuid id PK
         uuid organizacao_id FK
@@ -51,6 +60,7 @@ erDiagram
     DADOS_DESLOCAMENTO {
         uuid atividade_id PK,FK
         varchar modalidade
+        varchar regiao
         numeric distancia_ida_volta_km
         numeric dias_viagens
         numeric ocupacao
@@ -75,6 +85,14 @@ erDiagram
         uuid fator_id FK
         numeric quantidade_aplicada
         numeric fator_aplicado
+        varchar fator_fonte_aplicada
+        varchar fator_versao_aplicada
+        varchar fator_escopo_aplicado
+        varchar fator_regiao_aplicada
+        text fator_premissas_aplicadas
+        date periodo_inicio_aplicado
+        date periodo_fim_aplicado
+        varchar regiao_aplicada
         numeric resultado_kg_co2e
         varchar unidade_resultado
         varchar estado
@@ -88,16 +106,21 @@ erDiagram
         date periodo_base_inicio
         date periodo_base_fim
         numeric valor_base_kg_co2e
-        numeric reducao_alvo_percentual
+        numeric percentual_alvo
         date prazo
         varchar estado
+        timestamptz criado_em
+        timestamptz atualizado_em
     }
     ACOES_REDUCAO {
         uuid id PK
+        uuid organizacao_id FK
         uuid meta_id FK
         uuid responsavel_membro_id FK
         varchar titulo
         text descricao
         date prazo
         varchar estado
+        timestamptz criado_em
+        timestamptz atualizado_em
     }

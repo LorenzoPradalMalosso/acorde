@@ -1,6 +1,6 @@
 # Requisitos funcionais — Acorde 2.0
 
-> **Versão do sistema: 2.0.** Este catálogo é a proposta funcional da reformulação de carbono. A baseline acadêmica original RF01–RF11 permanece preservada na seção de rastreabilidade; os novos IDs não a sobrescrevem. Necessidade, piloto, fatores e recorte ainda dependem de validação. Nenhum requisito é evidência de funcionalidade implementada.
+> **Versão do sistema: 2.0.** RF-v2-01–08 têm implementação técnica parcial/automatizada descrita nas evidências das Fases 2–7; RF-v2-09 está limitado a sinalizar indisponibilidade de comparação enquanto cobertura/metodologia comparáveis não forem validadas. Fatores reais, validação acadêmica, cliente E2E/acessibilidade e aprovação D-012 seguem pendentes. A baseline acadêmica RF01–RF11 permanece preservada.
 
 ## Catálogo RF-v2
 
@@ -75,4 +75,4 @@ Os compromissos `RNF01–RNF06` permanecem ativos e detalhados em [`requisitos-n
 
 ## Critérios de aceitação iniciais
 
-Cada requisito deve ser ligado a issue, critérios objetivos, testes e evidências. Antes de aceitar resultados ambientais, deve ser possível rastrear atividade, fator, unidade, versão e período. Dados de demonstração fictícios devem estar identificados. A matriz RBAC, estados e contrato de API continuam pendentes de especificação.
+Cada requisito deve ser ligado a issue, critérios objetivos, testes e evidências. RF-v2-01/02 têm endpoints mínimos documentados em [`../api/autenticacao-organizacoes.md`](../api/autenticacao-organizacoes.md); dashboard, metas e ações estão em [`../api/dashboard-metas-acoes.md`](../api/dashboard-metas-acoes.md). A matriz D-012 de negócio é provisória e aguarda revisão em P-004. Antes de aceitar resultados ambientais, deve ser possível rastrear atividade, fator, unidade, versão e período. Dados fictícios devem estar identificados.
