@@ -1,11 +1,26 @@
 @import url('../../assets/branding/Acorde_Brand_Kit/tokens/acorde.css');
 
-:root { font-family: var(--acorde-font-body); color: var(--acorde-foreground); background: var(--acorde-background); font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+@font-face {
+  font-family: Inter;
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: Manrope;
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+  src: url('/fonts/manrope-latin.woff2') format('woff2');
+}
+
+:root { font-family: var(--acorde-font-body); color: var(--acorde-foreground); background: var(--acorde-background); font-synthesis: none; -webkit-font-smoothing: antialiased; color-scheme: light; }
+:root[data-theme='dark'] { color-scheme: dark; --acorde-background: #14211d; --acorde-foreground: #e8f2ed; --acorde-muted: #adbbb3; --acorde-border: #344b40; --acorde-accent-soft: #1b352b; }
 * { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; min-height: 100vh; }
-button, input, select { font: inherit; }
+body { margin: 0; min-height: 100vh; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .55; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--acorde-primary-600); outline-offset: 2px; }
+button:disabled { cursor: not-allowed; opacity: .6; }
+:focus-visible { outline: 3px solid var(--link); outline-offset: 3px; }
 #root { min-height: 100vh; }
-:root[data-theme='dark'] { --acorde-background: #14211d; --acorde-foreground: #e8f2ed; --acorde-muted: #adbbb3; --acorde-border: #344b40; --acorde-accent-soft: #1b352b; }

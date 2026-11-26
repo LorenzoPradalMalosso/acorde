@@ -61,6 +61,16 @@ flutter:
   assets:
     - assets/branding/acorde-horizontal-principal.png
     - assets/branding/acorde-horizontal-inverso.png
+    - assets/fonts/Inter-OFL.txt
+    - assets/fonts/Manrope-OFL.txt
+
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

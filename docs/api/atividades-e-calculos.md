@@ -54,11 +54,14 @@ A quantidade armazenada em `passageiro-km` é distância de ida e volta multipli
   "justification": "...",
   "revision": 1,
   "emissionsKgCo2e": null,
-  "current": false
+  "current": false,
+  "canReprocess": true
 }
 ```
 
 Estados de cálculo: `PENDENTE`, `VALIDA` e `SUBSTITUIDA`. Uma pendência nunca retorna emissão zero artificial. Uma revisão válida vigente é a única que pode ser agregada.
+
+`canReprocess` indica que o membro autenticado é o autor da atividade e tem o perfil exigido para a categoria. A API verifica essas condições novamente a cada solicitação de recálculo.
 
 ## Consulta e histórico
 

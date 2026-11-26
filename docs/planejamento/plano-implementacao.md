@@ -125,9 +125,9 @@ Cada item recebe estado `[ ] planejado`, `[x] concluído com evidência` ou `[!]
 **Requisitos:** RF-v2-01, 03, 04, 06, 07, 08 e 09 conforme fluxos Web; RNF01–05. **Dependências:** Fases 1–2 e contratos de API; registro/cálculo integra conforme Fase 3.
 
 - [x] Aplicar tokens oficiais, responsividade, tema claro/escuro e controles acessíveis por teclado.
-- [x] Implementar login do gestor, expiração da sessão, logout e seleção de organização.
+- [x] Implementar login do gestor e do colaborador, expiração da sessão, logout e seleção de organização.
 - [x] Implementar navegação principal, resumo informativo e telas de energia/registros.
-- [x] Conectar cadastro e histórico aos endpoints planejados de energia e atividades, sem dados mock.
+- [x] Conectar cadastro e histórico aos endpoints de energia e atividades. Conforme D-014, o colaborador também registra o próprio deslocamento na Web e consulta seu histórico pessoal.
 - [x] Exibir estados pendentes/erro/vazio e justificativa devolvida pela API; sem fabricar resultados.
 - [x] Construir e servir a Web por nginx no stack Docker junto à API/PostgreSQL isolados; smoke HTTP da página e do proxy `/api/health` retornaram 200.
 - [x] Inspecionar a tela de login em screenshot headless desktop; corrigir overflow horizontal detectado em viewport móvel.
@@ -168,7 +168,7 @@ Cada item recebe estado `[ ] planejado`, `[x] concluído com evidência` ou `[!]
 
 - [x] Persistir/criar/listar metas por organização com fonte, intervalo-base, valor, alvo, prazo e estado inicial.
 - [x] Criar ações vinculadas a meta com responsável, prazo, descrição e estado.
-- [x] Aplicar RBAC/isolation server-side: gestor gerencia; colaborador vê e avança apenas ação atribuída.
+- [x] Aplicar permissões no servidor. O gestor gerencia ações da organização e o colaborador consulta e avança suas ações atribuídas na Web ou no Mobile (D-012 e D-015).
 - [x] Exibir operação e manter conclusão de ação separada de emissões.
 - [!] Progresso ambiental não é calculado sem cobertura/períodos comparáveis validados (P-003).
 
@@ -237,5 +237,7 @@ Trilhas Web e Mobile podem avançar independentemente depois de contratos e auth
 - [ ] Preservar alterações locais/de outros integrantes; não fazer push, merge ou deploy externo sem autorização.
 
 ## Gate imediato
+
+A revisão visual D-013 tem validação incremental de interface com dados sintéticos no Chrome, registrada nas [evidências das Fases 05–07](../testes/evidencias-fases-05-07.md#revis%C3%A3o-visual-em-26-de-novembro-de-2026). Os gates de acessibilidade e de validação em Android/iOS permanecem abertos.
 
 Fases 1–7 têm implementação; a suíte PostgreSQL passou com 22 testes, Web lint/build passou, Flutter analyze e 2 testes de widget passaram e o APK Android foi construído. Imagens Docker Web/API e stack Compose isolado passaram smoke HTTP e fluxo sintético; o teste não alterou o banco `acorde-postgres` existente. Web e Mobile têm alternância de tema escuro; a tela de login teve screenshot desktop e o overflow móvel foi corrigido no CSS, mas a captura posterior foi bloqueada e fluxos interativos/acessibilidade continuam pendentes. Android/iOS físico, RNFs, assinatura Android oficial, TLS/deploy e backup ainda requerem validação. Fatores reais/metodologia e validação acadêmica seguem P-003; D-012 continua provisória em P-004. O checklist consolidado está em [`relatorio-final-entrega.md`](../testes/relatorio-final-entrega.md).

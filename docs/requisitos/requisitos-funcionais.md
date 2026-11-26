@@ -8,7 +8,7 @@
 |---|---|---|
 | RF-v2-01 | Autenticação e perfis | Login por e-mail/senha e autorização de gestor/colaborador no backend |
 | RF-v2-02 | Organizações e membros | Vínculo de usuários a organizações; leituras e alterações isoladas por organização |
-| RF-v2-03 | Registro de atividades emissoras | Registro de consumo de energia pela Web e deslocamento casa–trabalho pelo Mobile, com quantidade, unidade e período |
+| RF-v2-03 | Registro de atividades emissoras | Gestores registram consumo de energia na Web. Colaboradores registram o próprio deslocamento casa–trabalho na Web ou no Mobile. As atividades têm quantidade, unidade e período. |
 | RF-v2-04 | Fatores de emissão | Cadastro/seleção versionada de fatores com fonte, escopo, unidade, região, validade e premissas |
 | RF-v2-05 | Cálculo rastreável | Calcular kg CO₂e no backend quando atividade e fator forem compatíveis; reter fator e valores aplicados |
 | RF-v2-06 | Dashboard e histórico | Exibir total monitorado parcial, registros por fonte, período, evolução e qualidade/cobertura dos dados |

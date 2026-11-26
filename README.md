@@ -34,11 +34,11 @@ O Acorde conecta uma calculadora de carbono, um dashboard ambiental e planos de 
 ```mermaid
 flowchart LR
     A[Gestor registra energia mensal na Web] --> B[API valida atividade e fator versionado]
-    C[Colaborador registra deslocamento no Mobile] --> B
+    C[Colaborador registra deslocamento pela Web ou pelo Mobile] --> B
     B --> D[Backend calcula e persiste estimativa rastreável]
     D --> E[Dashboard exibe total parcial, fontes e histórico]
     E --> F[Gestor define meta e atribui ação]
-    F --> G[Colaborador atualiza a ação no Mobile]
+    F --> G[Colaborador atualiza a ação na Web ou no Mobile]
     G --> E
 ```
 
@@ -57,7 +57,7 @@ O total exibido é parcial e depende da cobertura dos registros. Conclusão de u
 ## Escopo do MVP — seis semanas
 
 - Autenticação e perfis de gestor/colaborador, com isolamento por organização no backend.
-- Cadastro Web de consumo de energia por período e cadastro Mobile de deslocamentos.
+- Gestores registram consumo de energia por período na Web. Colaboradores registram seus deslocamentos pela Web ou pelo Mobile.
 - Catálogo de fatores com unidade, fonte, versão, validade, escopo, região e premissas; manter histórico dos fatores usados.
 - Cálculo no backend e histórico de registros válidos, pendentes ou substituídos.
 - Dashboard Web com emissões monitoradas, cobertura, composição por fonte, evolução e comparação somente entre períodos comparáveis.

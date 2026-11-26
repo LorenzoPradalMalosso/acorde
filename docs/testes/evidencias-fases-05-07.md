@@ -24,3 +24,10 @@
 - Fontes/fatores reais e validação acadêmica do método seguem pendentes em P-003. Estados e matriz D-012 aguardam aprovação em P-004.
 
 Nenhum dado real de emissão ou implantação externa foi criado/afirmado.
+
+## Revisão visual em 26 de novembro de 2026
+
+A decisão D-013 aplica o protótipo em verde claro às interfaces das Fases 4–7. Para reproduzir os fluxos, use a API com o perfil `local-demo` e um banco PostgreSQL separado, inicialmente vazio, com os fatores sintéticos de energia e deslocamento aplicados pelo inicializador. A sessão de verificação usou Chrome 158 e PostgreSQL 18.6 local com Flyway V1–V4.
+
+- Web em 320, 390, 768, 1000 e 1440 px. Verificados login inválido e válido, exibição de senha, mudança de tema pelo teclado, registros de energia calculados e pendentes, filtro temporal, gráficos, revisões do cálculo, consulta de fatores, criação de meta e ação vinculada, mudança de estado e logout. O botão de nova tentativa recuperou o dashboard após falha de rede. Em um banco vazio, os indicadores e gráficos sinalizaram ausência de cálculo. Executados `npm run lint` e `npm run build`.
+- Mobile. Executados `flutter analyze --no-pub`, `flutter test --no-pub` e builds Flutter Web e APK de depuração. No Chrome com toque emulado em 390 × 820 px, o colaborador entrou, registrou deslocamento, conferiu o resultado no histórico e avançou a ação atribuída de planejada a concluída. A validação em dispositivo Android/iOS e a auditoria completa de acessibilidade seguem pendentes.
