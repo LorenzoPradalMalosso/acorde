@@ -91,6 +91,22 @@ Contas disponíveis (todas usam a senha configurada localmente):
 
 Teste o isolamento entrando como gestor A e consultando a organização B; a API deve negar o acesso. O colaborador não deve conseguir listar ou alterar papéis de membros.
 
+### Conferir os cálculos da demonstração
+
+Use um banco dedicado à demonstração, por exemplo `DB_URL=jdbc:postgresql://localhost:5433/acorde_demo`. Ao iniciar a API, confirme no log o perfil `local-demo` e o nome do banco na linha do Flyway. O perfil semeia os fatores em um banco vazio. Um banco já populado com catálogo vazio continua sem fatores.
+
+1. Na Web, entre como `gestor-a@acorde.local` e registre **100 kWh** em Energia elétrica. Use a região `BR-SP` e um período contido entre 01/01/2020 e 31/12/2030. O resultado sintético esperado é **10 kg CO₂e**.
+2. Entre como `colaborador-a@acorde.local` e registre o deslocamento uma vez. Na Web, use **Registrar deslocamento** no menu lateral. No Mobile, use **Registros → Registrar deslocamento**. Informe **20 km** de ida e volta durante **5 dias**, com a mesma região e período. O resultado sintético esperado é **5 kg CO₂e**.
+3. Na Web, selecione **Todo o período** no Dashboard e clique em **Atualizar**. Com apenas esses dois registros válidos na organização, o total será **15 kg CO₂e**.
+
+Na Web, abra **Histórico** e selecione **Todos**, **Mobilidade** ou **Energia elétrica**. A opção **Somente pendentes** funciona com qualquer fonte.
+
+Após a disponibilização de um fator compatível, abra **Histórico → Ver revisões → Recalcular estimativa** na Web ou use **Recalcular estimativa** no cartão do registro pendente no Mobile. O botão aparece para quem registrou a atividade e tem o perfil autorizado. O recálculo conserva o registro original e adiciona uma revisão ao histórico. Sem fator compatível para todo o período, o registro segue pendente.
+
+### Acompanhar ações atribuídas
+
+Na Web, entre como gestor e abra **Metas e ações → Ações → Nova ação**. Vincule uma meta e escolha o colaborador responsável. Com a conta desse colaborador, abra **Minhas ações** na Web e use **Iniciar** e depois **Concluir**. A ação fica na aba **Concluídas**. O gestor pode consultar o andamento em **Metas e ações**.
+
 ## 5. Iniciar o Mobile Flutter
 
 Em outro terminal:

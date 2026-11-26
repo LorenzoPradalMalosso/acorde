@@ -366,6 +366,39 @@ class AuthenticationApiIntegrationTest {
     }
 
     @Test
+    void pendingEnergyCanBeReprocessedWithoutRegisteringTheActivityAgain() throws Exception {
+        String token = login("gestora-a@example.test", PASSWORD, organizationAId);
+        String response = mvc.perform(post("/api/carbon/activities/energy").header("Authorization", bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(energyRequest(UUID.randomUUID(), "2026-02-01", "2026-02-28", "100", " BR-SP ")))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.state").value("PENDENTE"))
+                .andExpect(jsonPath("$.canReprocess").value(true))
+                .andReturn().getResponse().getContentAsString();
+        String activityId = objectMapper.readTree(response).get("id").asText();
+
+        String collaborator = login("colaborador-a@example.test", PASSWORD, organizationAId);
+        mvc.perform(post("/api/carbon/activities/" + activityId + "/reprocess")
+                        .header("Authorization", bearer(collaborator)))
+                .andExpect(status().isNotFound());
+
+        insertSyntheticFactor("ENERGIA_ELETRICA", "kWh", "BR-SP", "0.10",
+                "2026-01-01", "2026-12-31", "synthetic-reprocess-pending");
+        mvc.perform(post("/api/carbon/activities/" + activityId + "/reprocess")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(activityId))
+                .andExpect(jsonPath("$.revision").value(2))
+                .andExpect(jsonPath("$.state").value("VALIDA"))
+                .andExpect(jsonPath("$.emissionsKgCo2e").value(10.0));
+        mvc.perform(get("/api/carbon/activities/" + activityId + "/calculations")
+                        .header("Authorization", bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].state").value("PENDENTE"))
+                .andExpect(jsonPath("$[1].current").value(true));
+    }
+
+    @Test
     void explicitReprocessingKeepsHistoryAndOnlyOneCurrentValidRevision() throws Exception {
         insertSyntheticFactor("ENERGIA_ELETRICA", "kWh", "*", "0.10",
                 "2026-01-01", "2026-12-31", "synthetic-global-v1");

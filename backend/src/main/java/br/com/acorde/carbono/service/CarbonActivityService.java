@@ -45,7 +45,7 @@ public class CarbonActivityService {
         }
         return persist("ENERGIA_ELETRICA", request.consumptionKwh(), "kWh", request, jwt,
                 activityId -> jdbc.update("INSERT INTO dados_energia(atividade_id, consumo_kwh, regiao_rede) VALUES (?, ?, ?)",
-                        activityId, request.consumptionKwh(), request.region()));
+                        activityId, request.consumptionKwh(), request.region().trim()));
     }
 
     @Transactional
@@ -75,13 +75,11 @@ public class CarbonActivityService {
         if (existing != null) return find(existing, organizationId, jwt);
 
         UUID activityId = UUID.randomUUID();
-        String state = "PENDENTE";
-        String reason = "Nenhum fator de emissão aprovado e compatível foi cadastrado para esta fonte, região, unidade e período.";
         List<Map<String, Object>> compatibleFactors = factors.findCompatible(category, expectedScope(category), unit, request.region().trim(),
                 request.periodStart(), request.periodEnd());
         Map<String, Object> factor = selectUnambiguousFactor(compatibleFactors, request.region().trim());
-        state = factor == null ? "PENDENTE" : "VALIDA";
-        if (factor != null) reason = null;
+        String state = factor == null ? "PENDENTE" : "VALIDA";
+        String reason = pendingReason(factor, compatibleFactors);
         int inserted = jdbc.update("""
                 INSERT INTO atividades_emissoras(id, organizacao_id, membro_id, categoria, periodo_inicio, periodo_fim,
                     quantidade, unidade, estado, justificativa_pendencia, chave_idempotencia)
@@ -146,19 +144,27 @@ public class CarbonActivityService {
         };
     }
 
+    private static String pendingReason(Map<String, Object> factor, List<Map<String, Object>> matches) {
+        if (factor != null) return null;
+        if (matches.isEmpty()) {
+            return "Nenhum fator de emissão compatível com a fonte, unidade e região cobre todo o período do registro.";
+        }
+        return "Há mais de um fator aplicável para a mesma região e período. O catálogo precisa ser revisado.";
+    }
+
     @Transactional(readOnly = true)
     public List<ActivityResponse> list(Jwt jwt) {
         UUID organization = claimUuid(jwt, "organization_id");
         UUID member = claimUuid(jwt, "member_id");
         boolean manager = "GESTOR".equals(jwt.getClaimAsString("role"));
         return jdbc.query("""
-                SELECT a.id, a.categoria, a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
+                SELECT a.id, a.membro_id, a.categoria, a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
                        a.estado, a.justificativa_pendencia, r.revisao, r.resultado_kg_co2e, r.vigente
                 FROM atividades_emissoras a LEFT JOIN registros_emissao r ON r.atividade_id = a.id
                     AND r.revisao = (SELECT MAX(last_revision.revisao) FROM registros_emissao last_revision WHERE last_revision.atividade_id = a.id)
                 WHERE a.organizacao_id = ? AND (? = TRUE OR a.membro_id = ?)
                 ORDER BY a.periodo_inicio DESC, a.criado_em DESC
-                """, mapper(), organization, manager, member);
+                """, mapper(member, manager), organization, manager, member);
     }
 
     @Transactional(readOnly = true)
@@ -170,12 +176,7 @@ public class CarbonActivityService {
     public ActivityResponse revise(UUID activityId, ActivityRevisionRequest request, Jwt jwt) {
         UUID organizationId = claimUuid(jwt, "organization_id");
         UUID memberId = claimUuid(jwt, "member_id");
-        List<Map<String, Object>> rows = jdbc.queryForList("""
-                SELECT categoria FROM atividades_emissoras
-                WHERE id = ? AND organizacao_id = ? AND membro_id = ?
-                """, activityId, organizationId, memberId);
-        if (rows.isEmpty()) throw new ApiException(HttpStatus.NOT_FOUND, "resource_not_found", "Activity not found");
-        String category = (String) rows.getFirst().get("categoria");
+        String category = lockOwnedActivity(activityId, organizationId, memberId);
         requireRole(jwt, "ENERGIA_ELETRICA".equals(category) ? MemberRole.GESTOR : MemberRole.COLABORADOR);
         if (request.periodEnd().isBefore(request.periodStart())) throw invalid("End date must not precede start date");
 
@@ -216,21 +217,18 @@ public class CarbonActivityService {
     public ActivityResponse reprocess(UUID activityId, Jwt jwt) {
         UUID organizationId = claimUuid(jwt, "organization_id");
         UUID memberId = claimUuid(jwt, "member_id");
-        List<Map<String, Object>> activities = jdbc.queryForList("""
-                SELECT a.id, a.categoria, a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
+        String category = lockOwnedActivity(activityId, organizationId, memberId);
+        requireRole(jwt, "ENERGIA_ELETRICA".equals(category) ? MemberRole.GESTOR : MemberRole.COLABORADOR);
+        Map<String, Object> activity = jdbc.queryForMap("""
+                SELECT a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
                        COALESCE(e.regiao_rede, d.regiao) AS regiao
                 FROM atividades_emissoras a
                 LEFT JOIN dados_energia e ON e.atividade_id = a.id
                 LEFT JOIN dados_deslocamento d ON d.atividade_id = a.id
                 WHERE a.id = ? AND a.organizacao_id = ? AND a.membro_id = ?
                 """, activityId, organizationId, memberId);
-        if (activities.isEmpty()) throw new ApiException(HttpStatus.NOT_FOUND, "resource_not_found", "Recurso nÃ£o encontrado");
-
-        Map<String, Object> activity = activities.getFirst();
-        String category = (String) activity.get("categoria");
-        requireRole(jwt, "ENERGIA_ELETRICA".equals(category) ? MemberRole.GESTOR : MemberRole.COLABORADOR);
         String unit = (String) activity.get("unidade");
-        String region = (String) activity.get("regiao");
+        String region = ((String) activity.get("regiao")).trim();
         LocalDate periodStart = ((java.sql.Date) activity.get("periodo_inicio")).toLocalDate();
         LocalDate periodEnd = ((java.sql.Date) activity.get("periodo_fim")).toLocalDate();
         BigDecimal quantity = (BigDecimal) activity.get("quantidade");
@@ -238,9 +236,7 @@ public class CarbonActivityService {
                 region, periodStart, periodEnd);
         Map<String, Object> factor = selectUnambiguousFactor(compatibleFactors, region);
         String state = factor == null ? "PENDENTE" : "VALIDA";
-        String reason = factor == null
-                ? "NÃ£o hÃ¡ um fator Ãºnico aprovado, com unidade, regiÃ£o e validade compatÃ­veis para todo o perÃ­odo."
-                : null;
+        String reason = pendingReason(factor, compatibleFactors);
         Integer nextRevision = jdbc.queryForObject(
                 "SELECT COALESCE(MAX(revisao), 0) + 1 FROM registros_emissao WHERE atividade_id = ?", Integer.class, activityId);
 
@@ -253,12 +249,24 @@ public class CarbonActivityService {
         return find(activityId, organizationId, jwt);
     }
 
+    private String lockOwnedActivity(UUID activityId, UUID organizationId, UUID memberId) {
+        String category = jdbc.query("""
+                SELECT categoria FROM atividades_emissoras
+                WHERE id = ? AND organizacao_id = ? AND membro_id = ?
+                FOR UPDATE
+                """, rs -> rs.next() ? rs.getString("categoria") : null, activityId, organizationId, memberId);
+        if (category == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "resource_not_found", "Recurso não encontrado");
+        }
+        return category;
+    }
+
     @Transactional(readOnly = true)
     public List<CalculationResponse> calculations(UUID activityId, Jwt jwt) {
         UUID organizationId = claimUuid(jwt, "organization_id");
         UUID memberId = claimUuid(jwt, "member_id");
         boolean manager = "GESTOR".equals(jwt.getClaimAsString("role"));
-        if (find(activityId, organizationId, jwt) == null) throw new ApiException(HttpStatus.NOT_FOUND, "resource_not_found", "Recurso nÃ£o encontrado");
+        find(activityId, organizationId, jwt);
         return jdbc.query("""
                 SELECT r.revisao, r.fator_id, r.fator_valor_aplicado, r.fator_fonte_aplicada,
                        r.fator_versao_aplicada, r.fator_escopo_aplicado, r.fator_regiao_aplicada,
@@ -284,23 +292,26 @@ public class CarbonActivityService {
 
     private ActivityResponse find(UUID id, UUID organization, Jwt jwt) {
         boolean manager = "GESTOR".equals(jwt.getClaimAsString("role"));
+        UUID member = claimUuid(jwt, "member_id");
         List<ActivityResponse> rows = jdbc.query("""
-                SELECT a.id, a.categoria, a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
+                SELECT a.id, a.membro_id, a.categoria, a.periodo_inicio, a.periodo_fim, a.quantidade, a.unidade,
                        a.estado, a.justificativa_pendencia, r.revisao, r.resultado_kg_co2e, r.vigente
                 FROM atividades_emissoras a LEFT JOIN registros_emissao r ON r.atividade_id = a.id
                     AND r.revisao = (SELECT MAX(last_revision.revisao) FROM registros_emissao last_revision WHERE last_revision.atividade_id = a.id)
                 WHERE a.id = ? AND a.organizacao_id = ? AND (? = TRUE OR a.membro_id = ?)
-                """, mapper(), id, organization, manager, claimUuid(jwt, "member_id"));
+                """, mapper(member, manager), id, organization, manager, member);
         if (rows.isEmpty()) throw new ApiException(HttpStatus.NOT_FOUND, "resource_not_found", "Recurso não encontrado");
         return rows.getFirst();
     }
 
-    private RowMapper<ActivityResponse> mapper() {
+    private RowMapper<ActivityResponse> mapper(UUID member, boolean manager) {
         return (rs, row) -> new ActivityResponse(rs.getObject("id", UUID.class), rs.getString("categoria"),
                 rs.getObject("periodo_inicio", LocalDate.class), rs.getObject("periodo_fim", LocalDate.class),
                 rs.getBigDecimal("quantidade"), rs.getString("unidade"), rs.getString("estado"),
                 rs.getString("justificativa_pendencia"), (Integer) rs.getObject("revisao"),
-                rs.getBigDecimal("resultado_kg_co2e"), rs.getBoolean("vigente"));
+                rs.getBigDecimal("resultado_kg_co2e"), rs.getBoolean("vigente"),
+                member.equals(rs.getObject("membro_id", UUID.class))
+                        && (manager ? "ENERGIA_ELETRICA" : "DESLOCAMENTO").equals(rs.getString("categoria")));
     }
 
     private void requireRole(Jwt jwt, MemberRole required) {

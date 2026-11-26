@@ -9,7 +9,7 @@ Demonstrar uma jornada integrada que registra duas fontes selecionadas de emiss�
 ## Fluxo demonstrável
 
 1. Gestor autentica-se na Web e registra consumo de energia elétrica por período.
-2. Colaborador autentica-se no Mobile e registra deslocamento casa–trabalho com modalidade, distância, período/dias e ocupação quando o fator exigir.
+2. Colaborador autentica-se no Mobile ou na Web e registra o próprio deslocamento casa–trabalho com modalidade, distância, período/dias e ocupação quando o fator exigir.
 3. API valida organização, perfil, unidade e fator compatível e calcula somente com dados suficientes.
 4. Backend persiste atividade e registro de emissão versionado; ausência de fator mantém cálculo pendente.
 5. Dashboard Web mostra emissões monitoradas por fonte/período, cobertura e histórico, sem se declarar inventário completo.

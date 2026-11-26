@@ -51,3 +51,19 @@
 - Assinatura Android de distribuição, TLS/provedor e deploy externo dependem de ambiente/chaves/aprovação da equipe.
 
 O checklist consolidado RF-v2-01–09/RNF01–06 e o estado de aceite estão em [`relatorio-final-entrega.md`](relatorio-final-entrega.md).
+
+## Verificação dos cálculos em 26 de novembro de 2026
+
+- O banco `acorde` tinha atividade pendente e catálogo vazio. A demonstração usou o banco dedicado `acorde_demo_calculos`, povoado pelo perfil `local-demo`.
+- Pelo proxy Web local, as duas contas da organização A autenticaram. A API calculou **10 kg CO₂e** para 100 kWh e **5 kg CO₂e** para 100 passageiro-km. O dashboard retornou **15 kg CO₂e**, 2 atividades e 0 pendências. Os dois históricos indicaram o fator sintético `TESTE-LOCAL-1`.
+- **23 testes PostgreSQL passaram**. O cenário de regressão confirma que a mesma atividade passa de pendente para válida após a carga de um fator compatível, com nova revisão e autorização do autor. Lint e build Web, análise Flutter e os 2 testes de widget passaram. O botão de recálculo no Mobile ainda não foi percorrido em dispositivo.
+
+## Cadastro de deslocamento na Web (D-014)
+
+- Lint e build da Web passaram. Pelo proxy local, o login do colaborador retornou o papel `COLABORADOR` e a consulta retornou seu registro de exemplo. A submissão pelo formulário ainda precisa de verificação manual no navegador.
+- Os 23 testes de integração com PostgreSQL passaram, incluindo registro de deslocamento com e sem fator compatível. A análise Flutter e os 3 testes de widget passaram após a inclusão do atalho em **Registros**.
+
+## Ações atribuídas na Web (D-015)
+
+- Lint e build da Web passaram. A consulta pelo proxy local retornou apenas as duas ações atribuídas ao colaborador de demonstração.
+- Os 23 testes com PostgreSQL passaram. A suíte cobre o avanço de planejada para em andamento e depois concluída, a restrição por responsável e a rejeição de transições indevidas. A interação com os botões no navegador ainda precisa de verificação manual.

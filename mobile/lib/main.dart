@@ -7,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'theme/acorde_colors.dart';
+import 'theme/acorde_theme.dart';
+
+part 'screens.dart';
 
 void main() => runApp(const AcordeApp());
 
@@ -22,19 +25,10 @@ class _AcordeAppState extends State<AcordeApp> {
 
   @override
   Widget build(BuildContext context) => MaterialApp(
+    debugShowCheckedModeBanner: false,
     title: 'Acorde 2.0',
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: AcordeColors.verdeProfundo),
-      scaffoldBackgroundColor: AcordeColors.offWhite,
-      useMaterial3: true,
-    ),
-    darkTheme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AcordeColors.verdeProfundo,
-        brightness: Brightness.dark,
-      ),
-      useMaterial3: true,
-    ),
+    theme: acordeTheme(Brightness.light),
+    darkTheme: acordeTheme(Brightness.dark),
     themeMode: _darkMode ? ThemeMode.dark : ThemeMode.light,
     home: AuthenticationScreen(
       isDark: _darkMode,
@@ -79,6 +73,12 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   String? _selectedOrganizationId;
   String? _error;
   bool _busy = false;
+  bool _showPassword = false;
+  _Destination _destination = _Destination.home;
+  _RecordFilter _recordFilter = _RecordFilter.all;
+  _ActionFilter _actionFilter = _ActionFilter.open;
+  bool _commuteOpen = false;
+  String? _selectedActionId;
   Timer? _expirationTimer;
   String? _pendingFingerprint;
 
@@ -126,6 +126,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+      if (!mounted) return;
       final result = jsonDecode(response.body) as Map<String, dynamic>;
       if (response.statusCode == 409 &&
           result['code'] == 'organization_selection_required') {
@@ -144,28 +145,33 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
         _expiresAt = result['expiresAt'] as String;
         _profile = result['profile'] as Map<String, dynamic>;
         _memberships = [];
+        _selectedOrganizationId = null;
+        _showPassword = false;
         _passwordController.clear();
       });
       _scheduleExpiration(_expiresAt!);
       if (_profile!['role'] == 'GESTOR') await _loadMembers();
-      if (_profile!['role'] == 'COLABORADOR') {
-        await _loadActivities();
-        await _loadActions();
+      if (_profile?['role'] == 'COLABORADOR') {
+        await Future.wait([_loadActivities(), _loadActions()]);
       }
     } catch (error) {
-      setState(() => _error = _messageFrom(error));
+      if (mounted && (_profile != null || _error == null)) {
+        setState(() => _error = _messageFrom(error));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _loadMembers() async {
+    final token = _accessToken;
     final response = await http.get(
       Uri.parse(
         '$_baseUrl/api/organizations/${_profile!['organizationId']}/members',
       ),
-      headers: {'Authorization': 'Bearer $_accessToken'},
+      headers: {'Authorization': 'Bearer $token'},
     );
+    if (!mounted || token != _accessToken) return;
     if (response.statusCode == 401) {
       _clearSession('A sessão expirou. Entre novamente.');
       return;
@@ -180,10 +186,12 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   }
 
   Future<void> _loadActivities() async {
+    final token = _accessToken;
     final response = await http.get(
       Uri.parse('$_baseUrl/api/carbon/activities'),
-      headers: {'Authorization': 'Bearer $_accessToken'},
+      headers: {'Authorization': 'Bearer $token'},
     );
+    if (!mounted || token != _accessToken) return;
     if (response.statusCode == 401) {
       _clearSession('A sessão expirou. Entre novamente.');
       return;
@@ -199,11 +207,61 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
     }
   }
 
+  Future<void> _reprocessActivity(Map<String, dynamic> activity) async {
+    final token = _accessToken;
+    if (token == null || _busy) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse(
+          '$_baseUrl/api/carbon/activities/${activity['id']}/reprocess',
+        ),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+      if (!mounted || token != _accessToken) return;
+      if (response.statusCode == 401) {
+        _clearSession('A sessão expirou. Entre novamente.');
+        return;
+      }
+      final updated = jsonDecode(response.body) as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        throw Exception(updated['message'] ?? 'Não foi possível recalcular.');
+      }
+      setState(() {
+        _activities = [
+          for (final item in _activities)
+            if (item['id'] == updated['id']) updated else item,
+        ];
+        if (updated['state'] == 'VALIDA') _recordFilter = _RecordFilter.all;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            updated['state'] == 'VALIDA'
+                ? 'Estimativa atualizada: ${_emissions(updated['emissionsKgCo2e'])}.'
+                : 'O cálculo continua pendente. Confira o motivo no registro.',
+          ),
+        ),
+      );
+    } catch (error) {
+      if (mounted && token == _accessToken) {
+        setState(() => _error = _messageFrom(error));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _loadActions() async {
+    final token = _accessToken;
     final response = await http.get(
       Uri.parse('$_baseUrl/api/actions'),
-      headers: {'Authorization': 'Bearer $_accessToken'},
+      headers: {'Authorization': 'Bearer $token'},
     );
+    if (!mounted || token != _accessToken) return;
     if (response.statusCode == 401) {
       _clearSession('A sessão expirou. Entre novamente.');
       return;
@@ -216,6 +274,7 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   }
 
   Future<void> _updateAction(Map<String, dynamic> action, String state) async {
+    final token = _accessToken;
     setState(() {
       _busy = true;
       _error = null;
@@ -224,11 +283,12 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       final response = await http.patch(
         Uri.parse('$_baseUrl/api/actions/${action['id']}/state'),
         headers: {
-          'Authorization': 'Bearer $_accessToken',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({'state': state}),
       );
+      if (!mounted || token != _accessToken) return;
       if (response.statusCode == 401) {
         _clearSession('A sessão expirou. Entre novamente.');
         return;
@@ -239,9 +299,20 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
           body['message'] ?? 'Não foi possível atualizar a ação.',
         );
       }
-      await _loadActions();
+      final updated = jsonDecode(response.body) as Map<String, dynamic>;
+      setState(
+        () => _actions = [
+          for (final item in _actions)
+            if (item['id'] == updated['id']) updated else item,
+        ],
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Andamento da ação atualizado.')),
+      );
     } catch (error) {
-      setState(() => _error = _messageFrom(error));
+      if (mounted && token == _accessToken) {
+        setState(() => _error = _messageFrom(error));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -259,18 +330,25 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   }
 
   Future<void> _submitCommute() async {
-    final start = DateTime.tryParse(_periodStartController.text.trim());
-    final end = DateTime.tryParse(_periodEndController.text.trim());
+    final token = _accessToken;
+    final startText = _periodStartController.text.trim();
+    final endText = _periodEndController.text.trim();
+    final start = DateTime.tryParse(startText);
+    final end = DateTime.tryParse(endText);
     final distanceValue = _distanceController.text.trim().replaceAll(',', '.');
     final daysValue = _daysController.text.trim().replaceAll(',', '.');
     final distance = double.tryParse(distanceValue);
     final days = double.tryParse(daysValue);
     if (start == null ||
         end == null ||
+        _isoDate(start) != startText ||
+        _isoDate(end) != endText ||
         start.isAfter(end) ||
         distance == null ||
+        !distance.isFinite ||
         distance <= 0 ||
         days == null ||
+        !days.isFinite ||
         days <= 0 ||
         _regionController.text.trim().isEmpty) {
       setState(
@@ -283,8 +361,8 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       _error = null;
     });
     final fingerprint = jsonEncode([
-      _periodStartController.text.trim(),
-      _periodEndController.text.trim(),
+      startText,
+      endText,
       _regionController.text.trim(),
       _mode,
       distanceValue,
@@ -298,19 +376,20 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       final response = await http.post(
         Uri.parse('$_baseUrl/api/carbon/activities/commutes'),
         headers: {
-          'Authorization': 'Bearer $_accessToken',
+          'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
           'idempotencyKey': _pendingIdempotencyKey,
-          'periodStart': _periodStartController.text.trim(),
-          'periodEnd': _periodEndController.text.trim(),
+          'periodStart': startText,
+          'periodEnd': endText,
           'region': _regionController.text.trim(),
           'mode': _mode,
           'roundTripDistanceKm': distanceValue,
           'commutingDays': daysValue,
         }),
       );
+      if (!mounted || token != _accessToken) return;
       if (response.statusCode == 401) {
         _clearSession('A sessão expirou. Entre novamente.');
         return;
@@ -325,9 +404,29 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       _pendingFingerprint = null;
       _distanceController.clear();
       _daysController.clear();
-      await _loadActivities();
+      final created = jsonDecode(response.body) as Map<String, dynamic>;
+      setState(() {
+        _activities = [
+          created,
+          ..._activities.where((activity) => activity['id'] != created['id']),
+        ];
+        _commuteOpen = false;
+        _destination = _Destination.records;
+        _recordFilter = _RecordFilter.all;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            created['state'] == 'PENDENTE'
+                ? 'Deslocamento registrado. Cálculo pendente.'
+                : 'Deslocamento registrado.',
+          ),
+        ),
+      );
     } catch (error) {
-      setState(() => _error = _messageFrom(error));
+      if (mounted && token == _accessToken) {
+        setState(() => _error = _messageFrom(error));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -375,6 +474,17 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
       _actions = [];
       _pendingIdempotencyKey = null;
       _pendingFingerprint = null;
+      _destination = _Destination.home;
+      _recordFilter = _RecordFilter.all;
+      _actionFilter = _ActionFilter.open;
+      _commuteOpen = false;
+      _selectedActionId = null;
+      _mode = 'ONIBUS';
+      _regionController.text = 'BR-SP';
+      _periodStartController.clear();
+      _periodEndController.clear();
+      _distanceController.clear();
+      _daysController.clear();
       _error = message;
     });
   }
@@ -382,315 +492,8 @@ class _AuthenticationScreenState extends State<AuthenticationScreen> {
   String _messageFrom(Object error) =>
       error.toString().replaceFirst('Exception: ', '');
 
+  void _changeView(VoidCallback change) => setState(change);
+
   @override
-  Widget build(BuildContext context) {
-    final profile = _profile;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Acorde 2.0'),
-        actions: [
-          IconButton(
-            tooltip: widget.isDark ? 'Ativar tema claro' : 'Ativar tema escuro',
-            onPressed: widget.onToggleTheme,
-            icon: Icon(widget.isDark ? Icons.light_mode : Icons.dark_mode),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: ListView(
-              padding: const EdgeInsets.all(24),
-              shrinkWrap: true,
-              children: [
-                Image.asset(
-                  widget.isDark
-                      ? 'assets/branding/acorde-horizontal-inverso.png'
-                      : 'assets/branding/acorde-horizontal-principal.png',
-                  width: 300,
-                  height: 90,
-                  fit: BoxFit.contain,
-                  semanticLabel: 'Acorde — gestão em sintonia',
-                ),
-                const SizedBox(height: 24),
-                if (profile == null) _loginForm() else _accountCard(profile),
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
-                  Semantics(
-                    liveRegion: true,
-                    child: Text(
-                      _error!,
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _loginForm() => Form(
-    key: _formKey,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Entrar', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          autofillHints: const [AutofillHints.username],
-          decoration: const InputDecoration(
-            labelText: 'E-mail',
-            border: OutlineInputBorder(),
-          ),
-          validator: (value) => value == null || value.trim().isEmpty
-              ? 'Informe seu e-mail.'
-              : null,
-        ),
-        const SizedBox(height: 12),
-        TextFormField(
-          controller: _passwordController,
-          obscureText: true,
-          autofillHints: const [AutofillHints.password],
-          decoration: const InputDecoration(
-            labelText: 'Senha',
-            border: OutlineInputBorder(),
-          ),
-          validator: (value) =>
-              value == null || value.isEmpty ? 'Informe sua senha.' : null,
-          onFieldSubmitted: (_) => _busy ? null : _login(),
-        ),
-        if (_memberships.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            initialValue: _selectedOrganizationId,
-            decoration: const InputDecoration(
-              labelText: 'Organização',
-              border: OutlineInputBorder(),
-            ),
-            items: _memberships
-                .map(
-                  (membership) => DropdownMenuItem(
-                    value: membership['organizationId'] as String,
-                    child: Text(
-                      '${membership['organizationName']} · ${membership['role']}',
-                    ),
-                  ),
-                )
-                .toList(),
-            onChanged: (value) =>
-                setState(() => _selectedOrganizationId = value),
-            validator: (value) =>
-                value == null ? 'Selecione uma organização.' : null,
-          ),
-        ],
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _busy ? null : _login,
-          child: Text(_busy ? 'Aguarde…' : 'Entrar'),
-        ),
-      ],
-    ),
-  );
-
-  Widget _accountCard(Map<String, dynamic> profile) => Card(
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Sessão autenticada',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          Text('${profile['name']} · ${profile['email']}'),
-          const SizedBox(height: 8),
-          Text('${profile['organizationName']} · ${profile['role']}'),
-          const SizedBox(height: 8),
-          Text('Expira às ${DateTime.parse(_expiresAt!).toLocal()}'),
-          if (profile['role'] == 'GESTOR') ...[
-            const Divider(height: 28),
-            Text(
-              'Membros da organização',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            for (final member in _members)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(member['name'] as String),
-                subtitle: Text('${member['email']} · ${member['role']}'),
-              ),
-            OutlinedButton(
-              onPressed: _busy ? null : _loadMembers,
-              child: const Text('Atualizar membros'),
-            ),
-          ],
-          if (profile['role'] == 'COLABORADOR') ...[
-            const Divider(height: 28),
-            Text(
-              'Registrar deslocamento',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Informe seus deslocamentos casa–trabalho. A estimativa depende de fator compatível aprovado.',
-            ),
-            const SizedBox(height: 14),
-            DropdownButtonFormField<String>(
-              initialValue: _mode,
-              decoration: const InputDecoration(
-                labelText: 'Modalidade',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'ONIBUS', child: Text('Ônibus')),
-                DropdownMenuItem(value: 'METRO', child: Text('Metrô')),
-                DropdownMenuItem(value: 'TREM', child: Text('Trem')),
-                DropdownMenuItem(value: 'CARRO', child: Text('Carro')),
-                DropdownMenuItem(value: 'MOTO', child: Text('Moto')),
-                DropdownMenuItem(value: 'BICICLETA', child: Text('Bicicleta')),
-                DropdownMenuItem(value: 'A_PE', child: Text('A pé')),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _mode = value ?? 'ONIBUS'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _regionController,
-              decoration: const InputDecoration(
-                labelText: 'Região (ex.: BR-SP)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _periodStartController,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Início do período (AAAA-MM-DD)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _periodEndController,
-              keyboardType: TextInputType.datetime,
-              decoration: const InputDecoration(
-                labelText: 'Fim do período (AAAA-MM-DD)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _distanceController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Distância total de ida e volta (km)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _daysController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: const InputDecoration(
-                labelText: 'Dias com deslocamento no período',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _busy ? null : _submitCommute,
-              child: Text(_busy ? 'Enviando…' : 'Registrar deslocamento'),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Meu histórico',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (_activities.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('Nenhum registro disponível.'),
-              ),
-            for (final activity in _activities)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(
-                  '${activity['category'] == 'DESLOCAMENTO' ? 'Deslocamento' : 'Energia'} · ${activity['state']}',
-                ),
-                subtitle: Text(
-                  '${activity['periodStart']} a ${activity['periodEnd']} · ${activity['quantity']} ${activity['unit']}${activity['justification'] == null ? '' : '\n${activity['justification']}'}',
-                ),
-                isThreeLine: activity['justification'] != null,
-                trailing: activity['emissionsKgCo2e'] == null
-                    ? null
-                    : Text('${activity['emissionsKgCo2e']} kg CO₂e'),
-              ),
-            OutlinedButton(
-              onPressed: _busy ? null : _loadActivities,
-              child: const Text('Atualizar histórico'),
-            ),
-            const Divider(height: 28),
-            Text(
-              'Ações atribuídas',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            if (_actions.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('Nenhuma ação atribuída disponível.'),
-              ),
-            for (final action in _actions)
-              Card(
-                child: ListTile(
-                  title: Text(action['title'] as String),
-                  subtitle: Text(
-                    '${action['state']} · Prazo ${action['dueDate']}${action['description'] == null ? '' : '\n${action['description']}'}',
-                  ),
-                  isThreeLine: action['description'] != null,
-                  trailing: action['state'] == 'PLANEJADA'
-                      ? TextButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _updateAction(action, 'EM_ANDAMENTO'),
-                          child: const Text('Iniciar'),
-                        )
-                      : action['state'] == 'EM_ANDAMENTO'
-                      ? TextButton(
-                          onPressed: _busy
-                              ? null
-                              : () => _updateAction(action, 'CONCLUIDA'),
-                          child: const Text('Concluir'),
-                        )
-                      : const Icon(Icons.check_circle_outline),
-                ),
-              ),
-            OutlinedButton(
-              onPressed: _busy ? null : _loadActions,
-              child: const Text('Atualizar ações'),
-            ),
-          ],
-          const SizedBox(height: 12),
-          FilledButton.tonal(
-            onPressed: _busy ? null : _logout,
-            child: const Text('Sair'),
-          ),
-        ],
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => _buildScreen();
 }

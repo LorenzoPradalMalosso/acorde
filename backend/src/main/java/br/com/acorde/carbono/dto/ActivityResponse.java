@@ -6,4 +6,4 @@ import java.util.UUID;
 
 public record ActivityResponse(UUID id, String category, LocalDate periodStart, LocalDate periodEnd,
                                BigDecimal quantity, String unit, String state, String justification,
-                               Integer revision, BigDecimal emissionsKgCo2e, boolean current) {}
+                               Integer revision, BigDecimal emissionsKgCo2e, boolean current, boolean canReprocess) {}
